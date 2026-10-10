@@ -100,10 +100,10 @@ export default function Header() {
             />
           </div>
           <div>
-            <h1 className="font-bold text-sm sm:text-base tracking-tight text-white flex items-center gap-1.5">
+            <h1 className="font-bold text-xs sm:text-base tracking-tight text-white flex items-center gap-1.5 truncate max-w-[130px] sm:max-w-none">
               <span>MUET Point Tracker</span>
             </h1>
-            <p className="text-[9px] sm:text-[10px] text-emerald-400/80 tracking-wider uppercase font-semibold hidden xs:block">
+            <p className="text-[9px] sm:text-[10px] text-emerald-400/80 tracking-wider uppercase font-semibold hidden sm:block">
               Jamshoro Transport System
             </p>
           </div>
@@ -203,10 +203,10 @@ export default function Header() {
           ))}
         </div>
 
-        {/* AI Assistant Pill */}
+        {/* AI Assistant Pill (Visible on sm+ screens; floating MyMuetien assistant bubble serves mobile) */}
         <button
           onClick={() => setIsAiAssistantOpen(true)}
-          className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-md transition-all"
+          className="hidden sm:flex bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full items-center gap-1.5 shadow-md transition-all shrink-0"
         >
           <Sparkles className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">MUET Point AI</span>
@@ -221,11 +221,11 @@ export default function Header() {
           <QrCode className="w-4 h-4" />
         </button>
 
-        {/* Mobile View Simulator Button */}
+        {/* Mobile View Simulator Button (Hidden on actual mobile viewports) */}
         <button
           onClick={() => setIsMobilePreviewOpen(true)}
           title="Toggle Mobile Simulator (iPhone 15 Mockup)"
-          className="h-9 px-2.5 rounded-full bg-[#0f241c] hover:bg-[#153427] border border-emerald-800/80 text-emerald-300 flex items-center gap-1.5 text-xs font-medium transition-all"
+          className="hidden sm:flex h-9 px-2.5 rounded-full bg-[#0f241c] hover:bg-[#153427] border border-emerald-800/80 text-emerald-300 items-center gap-1.5 text-xs font-medium transition-all shrink-0"
         >
           <Smartphone className="w-4 h-4 text-emerald-400" />
           <span className="hidden lg:inline text-[11px]">Phone View</span>
@@ -241,7 +241,7 @@ export default function Header() {
               setIsNotifOpen(!isNotifOpen);
               if (!isNotifOpen) markAllNotificationsRead();
             }}
-            className="relative w-9 h-9 rounded-full bg-[#0f241c] hover:bg-[#153427] border border-emerald-900/60 flex items-center justify-center text-slate-200 transition-all"
+            className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#0f241c] hover:bg-[#153427] border border-emerald-900/60 flex items-center justify-center text-slate-200 transition-all shrink-0"
           >
             <Bell className="w-4 h-4 text-emerald-400" />
             {unreadCount > 0 && (
@@ -253,7 +253,7 @@ export default function Header() {
 
           {/* Notifications Dropdown */}
           {isNotifOpen && (
-            <div className="absolute right-0 top-11 w-80 bg-[#0c1f17] border border-emerald-800 rounded-xl shadow-2xl p-3 z-50 text-xs">
+            <div className="absolute right-0 top-11 w-[calc(100vw-24px)] max-w-xs sm:w-80 bg-[#0c1f17] border border-emerald-800 rounded-xl shadow-2xl p-3 z-50 text-xs">
               <div className="flex items-center justify-between pb-2 border-b border-emerald-900/80 mb-2">
                 <span className="font-bold text-white">Notifications ({notifications.length})</span>
                 <button
@@ -304,7 +304,7 @@ export default function Header() {
 
           {/* User Menu & Role Switcher */}
           {isUserMenuOpen && (
-            <div className="absolute right-0 top-11 w-64 bg-[#0c1f17] border border-emerald-800 rounded-xl shadow-2xl p-3 z-50 text-xs">
+            <div className="absolute right-0 top-11 w-[calc(100vw-24px)] max-w-[260px] bg-[#0c1f17] border border-emerald-800 rounded-xl shadow-2xl p-3 z-50 text-xs">
               <div className="pb-3 border-b border-emerald-900/80 mb-2">
                 <p className="font-bold text-white text-sm">{currentUser?.name}</p>
                 <p className="text-[11px] text-emerald-400 font-medium">

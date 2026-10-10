@@ -18,10 +18,10 @@ export default function RouteDetailsModal() {
   if (!selectedRoute) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-[#0b1b14] border border-emerald-800/80 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
         {/* Header matching Mockup */}
-        <div className="p-4 sm:p-5 border-b border-emerald-950/80 bg-[#0d2219] flex items-center justify-between">
+        <div className="p-3.5 sm:p-5 border-b border-emerald-950/80 bg-[#0d2219] flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSelectedRoute(null)}

@@ -161,7 +161,7 @@ function MainLayout() {
       </div>
 
       {/* Mobile Bottom Navigation Bar (Visible only on < md screens) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0a1713]/95 backdrop-blur-lg border-t border-emerald-950/90 h-16 flex items-center justify-around px-2 text-[10px]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0a1713]/95 backdrop-blur-lg border-t border-emerald-950/90 h-16 safe-area-bottom flex items-center justify-around px-2 text-[10px]">
         <button
           onClick={() => setActiveTab('home')}
           className={`flex flex-col items-center gap-1 transition ${

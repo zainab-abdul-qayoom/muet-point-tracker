@@ -169,13 +169,13 @@ export default function AuthPage() {
       </div>
 
       {/* Main Authentication Container */}
-      <div className="relative z-10 w-full max-w-md my-8 animate-in fade-in zoom-in-95 duration-300">
-        <div className="bg-[#091812]/95 border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/80 backdrop-blur-xl ring-1 ring-amber-500/20">
+      <div className="relative z-10 w-full max-w-md my-4 sm:my-8 animate-in fade-in zoom-in-95 duration-300">
+        <div className="bg-[#091812]/95 border border-emerald-500/30 rounded-3xl p-4 sm:p-8 shadow-2xl shadow-black/80 backdrop-blur-xl ring-1 ring-amber-500/20">
           
           {/* Authentic MUET University Crest Seal Badge */}
           <div className="text-center mb-6">
             <div className="inline-block relative">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-[#0d271d] border-2 border-emerald-400/50 p-2 mx-auto flex items-center justify-center shadow-2xl shadow-emerald-950/60 ring-2 ring-amber-400/30">
+              <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl bg-[#0d271d] border-2 border-emerald-400/50 p-2 mx-auto flex items-center justify-center shadow-2xl shadow-emerald-950/60 ring-2 ring-amber-400/30">
                 <img
                   src="/assets/muet_logo_seal.jpg"
                   alt="Mehran University Seal"
@@ -187,7 +187,7 @@ export default function AuthPage() {
               </span>
             </div>
 
-            <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center justify-center gap-2">
+            <h1 className="mt-3 sm:mt-4 text-xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center justify-center gap-2">
               <span>MUET Point Tracker</span>
             </h1>
             <p className="text-xs sm:text-sm text-emerald-400/90 font-medium mt-1">
@@ -357,32 +357,32 @@ export default function AuthPage() {
                   </span>
                   <span className="text-[10px] text-slate-500">Requires Sign In</span>
                 </p>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
                   <button
                     type="button"
                     onClick={() => handleQuickFill('Student')}
                     title="Student: 25BSCS016 / password123"
-                    className="text-[11px] py-1.5 px-2 rounded-lg bg-[#0c2219] hover:bg-[#123023] border border-emerald-900 text-emerald-300 flex items-center justify-center gap-1 transition"
+                    className="text-[10px] sm:text-[11px] py-1.5 px-1 sm:px-2 rounded-lg bg-[#0c2219] hover:bg-[#123023] border border-emerald-900 text-emerald-300 flex items-center justify-center gap-0.5 sm:gap-1 transition"
                   >
-                    <GraduationCap className="w-3 h-3 text-emerald-400" />
+                    <GraduationCap className="w-3 h-3 text-emerald-400 shrink-0" />
                     <span className="font-semibold">Student</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleQuickFill('Driver')}
                     title="Driver: DRV-7712 / driver123"
-                    className="text-[11px] py-1.5 px-2 rounded-lg bg-[#0c2219] hover:bg-[#123023] border border-emerald-900 text-amber-300 flex items-center justify-center gap-1 transition"
+                    className="text-[10px] sm:text-[11px] py-1.5 px-1 sm:px-2 rounded-lg bg-[#0c2219] hover:bg-[#123023] border border-emerald-900 text-amber-300 flex items-center justify-center gap-0.5 sm:gap-1 transition"
                   >
-                    <Truck className="w-3 h-3 text-amber-400" />
+                    <Truck className="w-3 h-3 text-amber-400 shrink-0" />
                     <span className="font-semibold">Driver</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleQuickFill('Admin')}
                     title="Admin: admin@muet.edu.pk / admin123"
-                    className="text-[11px] py-1.5 px-2 rounded-lg bg-[#0c2219] hover:bg-[#123023] border border-emerald-900 text-purple-300 flex items-center justify-center gap-1 transition"
+                    className="text-[10px] sm:text-[11px] py-1.5 px-1 sm:px-2 rounded-lg bg-[#0c2219] hover:bg-[#123023] border border-emerald-900 text-purple-300 flex items-center justify-center gap-0.5 sm:gap-1 transition"
                   >
-                    <Shield className="w-3 h-3 text-purple-400" />
+                    <Shield className="w-3 h-3 text-purple-400 shrink-0" />
                     <span className="font-semibold">Admin</span>
                   </button>
                 </div>

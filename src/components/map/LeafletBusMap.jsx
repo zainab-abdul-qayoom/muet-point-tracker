@@ -44,8 +44,15 @@ export default function LeafletBusMap({ height = '460px', showControls = true, f
       mapInstanceRef.current = map;
     }
 
+    const handleResize = () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    };
+    window.addEventListener('resize', handleResize);
+
     return () => {
-      // Keep instance or destroy on unmount
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
@@ -236,7 +243,7 @@ export default function LeafletBusMap({ height = '460px', showControls = true, f
           }
         }}
         title="Recenter on MUET Jamshoro"
-        className="absolute bottom-4 left-4 z-20 bg-[#0f221a]/90 hover:bg-[#153427] text-emerald-400 border border-emerald-800/70 p-2.5 rounded-lg shadow-lg text-xs font-medium flex items-center gap-1.5 backdrop-blur-sm transition-all"
+        className="absolute bottom-4 left-4 z-20 bg-[#0f221a]/90 hover:bg-[#153427] text-emerald-400 border border-emerald-800/70 p-2 sm:p-2.5 rounded-lg shadow-lg text-[11px] sm:text-xs font-medium flex items-center gap-1.5 backdrop-blur-sm transition-all"
       >
         <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
         MUET Main Campus

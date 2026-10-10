@@ -57,7 +57,7 @@ export default function BusRoutesView() {
               </div>
             </div>
 
-            <div className="pt-4 mt-4 border-t border-emerald-950 flex items-center justify-between">
+            <div className="pt-4 mt-4 border-t border-emerald-950 flex items-center justify-between gap-2">
               <span className="text-[11px] text-slate-400">
                 Hours: {route.serviceHours}
               </span>

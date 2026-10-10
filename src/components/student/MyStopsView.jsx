@@ -72,28 +72,28 @@ export default function MyStopsView() {
             return (
               <div
                 key={stop.id}
-                className="p-3.5 bg-[#0e241c] hover:bg-[#143226] border border-emerald-900/60 rounded-xl flex items-center justify-between transition group"
+                className="p-3 sm:p-3.5 bg-[#0e241c] hover:bg-[#143226] border border-emerald-900/60 rounded-xl flex items-center justify-between gap-2 transition group"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center text-emerald-400">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center text-emerald-400 shrink-0">
                     <MapPin className="w-4 h-4" />
                   </div>
-                  <div>
-                    <h4 className="font-bold text-xs sm:text-sm text-white">{stop.name}</h4>
-                    <p className="text-[11px] text-slate-400">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-bold text-xs sm:text-sm text-white truncate">{stop.name}</h4>
+                    <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">
                       {stop.routeNumber} ({stop.routeName})
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-emerald-400 bg-[#08150f] px-2.5 py-1 rounded border border-emerald-800">
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                  <span className="text-[11px] sm:text-xs font-bold text-emerald-400 bg-[#08150f] px-2 sm:px-2.5 py-1 rounded border border-emerald-800 whitespace-nowrap">
                     ETA {stop.eta}
                   </span>
 
                   <button
                     onClick={() => toggleFavorite(stop.id)}
-                    className="p-1.5 hover:text-emerald-400 text-slate-400 transition"
+                    className="p-1 sm:p-1.5 hover:text-emerald-400 text-slate-400 transition"
                   >
                     <Bookmark className={`w-4 h-4 ${isFav ? 'text-emerald-400 fill-emerald-400' : ''}`} />
                   </button>

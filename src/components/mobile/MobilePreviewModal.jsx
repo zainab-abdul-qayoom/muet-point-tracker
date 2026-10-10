@@ -47,7 +47,7 @@ export default function MobilePreviewModal() {
         </button>
 
         {/* Smartphone Hardware Frame (iPhone 15 Pro mockup matching image) */}
-        <div className="w-[360px] sm:w-[380px] h-[740px] bg-[#07130e] border-[8px] border-[#1a382b] rounded-[48px] shadow-2xl overflow-hidden flex flex-col relative ring-1 ring-emerald-500/30">
+        <div className="w-[calc(100vw-32px)] max-w-[360px] sm:max-w-[380px] h-[min(740px,88vh)] bg-[#07130e] border-[6px] sm:border-[8px] border-[#1a382b] rounded-[36px] sm:rounded-[48px] shadow-2xl overflow-hidden flex flex-col relative ring-1 ring-emerald-500/30">
           {/* Dynamic Island / Speaker Notch */}
           <div className="w-full h-8 bg-[#07130e] px-7 flex items-center justify-between text-[11px] text-slate-300 font-semibold pt-1 shrink-0 z-30">
             <span>9:41</span>

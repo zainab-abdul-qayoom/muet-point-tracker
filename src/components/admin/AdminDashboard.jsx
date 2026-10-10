@@ -165,48 +165,48 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Cards matching Mockup exactly */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Total Buses */}
-        <div className="bg-[#0b1b14] border border-emerald-900/70 rounded-2xl p-4 shadow-lg flex items-center justify-between">
+        <div className="bg-[#0b1b14] border border-emerald-900/70 rounded-2xl p-3 sm:p-4 shadow-lg flex items-center justify-between">
           <div>
-            <span className="text-xs text-slate-400 font-medium">Total Buses</span>
-            <p className="text-2xl font-black text-white mt-0.5">{totalBuses}</p>
+            <span className="text-[11px] sm:text-xs text-slate-400 font-medium">Total Buses</span>
+            <p className="text-xl sm:text-2xl font-black text-white mt-0.5">{totalBuses}</p>
           </div>
-          <div className="w-11 h-11 rounded-xl bg-emerald-950 border border-emerald-800/60 flex items-center justify-center text-emerald-400">
-            <Bus className="w-6 h-6" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-emerald-950 border border-emerald-800/60 flex items-center justify-center text-emerald-400 shrink-0">
+            <Bus className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
         </div>
 
         {/* Active Buses */}
-        <div className="bg-[#0b1b14] border border-emerald-900/70 rounded-2xl p-4 shadow-lg flex items-center justify-between">
+        <div className="bg-[#0b1b14] border border-emerald-900/70 rounded-2xl p-3 sm:p-4 shadow-lg flex items-center justify-between">
           <div>
-            <span className="text-xs text-slate-400 font-medium">Active Buses</span>
-            <p className="text-2xl font-black text-emerald-400 mt-0.5">{activeBuses}</p>
+            <span className="text-[11px] sm:text-xs text-slate-400 font-medium">Active Buses</span>
+            <p className="text-xl sm:text-2xl font-black text-emerald-400 mt-0.5">{activeBuses}</p>
           </div>
-          <div className="w-11 h-11 rounded-xl bg-emerald-950 border border-emerald-800/60 flex items-center justify-center text-emerald-400">
-            <Navigation className="w-6 h-6" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-emerald-950 border border-emerald-800/60 flex items-center justify-center text-emerald-400 shrink-0">
+            <Navigation className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
         </div>
 
         {/* Total Drivers */}
-        <div className="bg-[#0b1b14] border border-emerald-900/70 rounded-2xl p-4 shadow-lg flex items-center justify-between">
+        <div className="bg-[#0b1b14] border border-emerald-900/70 rounded-2xl p-3 sm:p-4 shadow-lg flex items-center justify-between">
           <div>
-            <span className="text-xs text-slate-400 font-medium">Total Drivers</span>
-            <p className="text-2xl font-black text-white mt-0.5">{totalDrivers}</p>
+            <span className="text-[11px] sm:text-xs text-slate-400 font-medium">Total Drivers</span>
+            <p className="text-xl sm:text-2xl font-black text-white mt-0.5">{totalDrivers}</p>
           </div>
-          <div className="w-11 h-11 rounded-xl bg-emerald-950 border border-emerald-800/60 flex items-center justify-center text-purple-400">
-            <Users className="w-6 h-6" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-emerald-950 border border-emerald-800/60 flex items-center justify-center text-purple-400 shrink-0">
+            <Users className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
         </div>
 
         {/* Total Routes */}
-        <div className="bg-[#0b1b14] border border-emerald-900/70 rounded-2xl p-4 shadow-lg flex items-center justify-between">
+        <div className="bg-[#0b1b14] border border-emerald-900/70 rounded-2xl p-3 sm:p-4 shadow-lg flex items-center justify-between">
           <div>
-            <span className="text-xs text-slate-400 font-medium">Total Routes</span>
-            <p className="text-2xl font-black text-white mt-0.5">{totalRoutes}</p>
+            <span className="text-[11px] sm:text-xs text-slate-400 font-medium">Total Routes</span>
+            <p className="text-xl sm:text-2xl font-black text-white mt-0.5">{totalRoutes}</p>
           </div>
-          <div className="w-11 h-11 rounded-xl bg-emerald-950 border border-emerald-800/60 flex items-center justify-center text-orange-400">
-            <RouteIcon className="w-6 h-6" />
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-emerald-950 border border-emerald-800/60 flex items-center justify-center text-orange-400 shrink-0">
+            <RouteIcon className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
         </div>
       </div>
@@ -386,8 +386,8 @@ export default function AdminDashboard() {
 
       {/* Add Bus Modal */}
       {showAddBusModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="bg-[#0b1b14] border border-emerald-800 rounded-2xl w-full max-w-md p-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm">
+          <div className="bg-[#0b1b14] border border-emerald-800 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-5 shadow-2xl">
             <h3 className="font-bold text-base text-white mb-3">Register New University Bus</h3>
             <form onSubmit={handleCreateBus} className="space-y-3 text-xs">
               <div>
@@ -475,8 +475,8 @@ export default function AdminDashboard() {
 
       {/* Broadcast Alert Modal */}
       {showAlertModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="bg-[#0b1b14] border border-amber-800 rounded-2xl w-full max-w-md p-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm">
+          <div className="bg-[#0b1b14] border border-amber-800 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-5 shadow-2xl">
             <h3 className="font-bold text-base text-amber-400 flex items-center gap-2 mb-3">
               <Radio className="w-4 h-4 animate-pulse" />
               <span>Broadcast Emergency Delay Alert</span>

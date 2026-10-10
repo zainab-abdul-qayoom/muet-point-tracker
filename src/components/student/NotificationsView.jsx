@@ -105,7 +105,7 @@ export default function NotificationsView() {
 
               {/* Content */}
               <div className="flex-1">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
                   <h3 className="font-bold text-sm text-white">{notif.title}</h3>
                   <span className="text-[11px] text-slate-400 shrink-0 flex items-center gap-1">
                     <Clock className="w-3 h-3" /> {notif.time}

@@ -92,26 +92,26 @@ export default function StudentDashboard() {
           </div>
 
           {/* Bottom Quick Info strip matching Mockup exactly */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
             {/* Card 1: Next Bus */}
-            <div className="stat-card bg-[#0f241c] border border-emerald-900/60 rounded-xl p-3.5 shadow-md flex flex-col justify-between hover:border-emerald-700/60 transition">
-              <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-                <Bus className="w-4 h-4 text-emerald-400" />
-                <span>Next Bus</span>
+            <div className="stat-card bg-[#0f241c] border border-emerald-900/60 rounded-xl p-2.5 sm:p-3.5 shadow-md flex flex-col justify-between hover:border-emerald-700/60 transition">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-slate-400 text-xs mb-1">
+                <Bus className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
+                <span className="text-[11px] sm:text-xs">Next Bus</span>
               </div>
               <div>
-                <p className="text-base font-bold text-white">{bus03.number}</p>
-                <p className="text-xs text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
-                  <Clock className="w-3 h-3" /> ETA {bus03.eta}
+                <p className="text-sm sm:text-base font-bold text-white">{bus03.number}</p>
+                <p className="text-[11px] sm:text-xs text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
+                  <Clock className="w-3 h-3 shrink-0" /> ETA {bus03.eta}
                 </p>
               </div>
             </div>
 
             {/* Card 2: Your Route */}
-            <div className="stat-card bg-[#0f241c] border border-emerald-900/60 rounded-xl p-3.5 shadow-md flex flex-col justify-between hover:border-emerald-700/60 transition">
-              <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-                <Navigation className="w-4 h-4 text-emerald-400" />
-                <span>Your Route</span>
+            <div className="stat-card bg-[#0f241c] border border-emerald-900/60 rounded-xl p-2.5 sm:p-3.5 shadow-md flex flex-col justify-between hover:border-emerald-700/60 transition">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-slate-400 text-xs mb-1">
+                <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
+                <span className="text-[11px] sm:text-xs">Your Route</span>
               </div>
               <div>
                 <p className="text-xs font-bold text-white truncate">{myRoute.name}</p>
@@ -126,28 +126,28 @@ export default function StudentDashboard() {
             </div>
 
             {/* Card 3: Nearest Stop */}
-            <div className="stat-card bg-[#0f241c] border border-emerald-900/60 rounded-xl p-3.5 shadow-md flex flex-col justify-between hover:border-emerald-700/60 transition">
-              <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-                <MapPin className="w-4 h-4 text-emerald-400" />
-                <span>Nearest Stop</span>
+            <div className="stat-card bg-[#0f241c] border border-emerald-900/60 rounded-xl p-2.5 sm:p-3.5 shadow-md flex flex-col justify-between hover:border-emerald-700/60 transition">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-slate-400 text-xs mb-1">
+                <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
+                <span className="text-[11px] sm:text-xs">Nearest Stop</span>
               </div>
               <div>
-                <p className="text-xs font-bold text-white truncate">{currentUser.nearestStop || 'Academic Block'}</p>
-                <p className="text-xs text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
+                <p className="text-xs sm:text-sm font-bold text-white truncate">{currentUser.nearestStop || 'Academic Block'}</p>
+                <p className="text-[11px] sm:text-xs text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
                   <span>{currentUser.walkTime || '2 min walk'}</span>
                 </p>
               </div>
             </div>
 
             {/* Card 4: Total Buses */}
-            <div className="stat-card bg-[#0f241c] border border-emerald-900/60 rounded-xl p-3.5 shadow-md flex flex-col justify-between hover:border-emerald-700/60 transition">
-              <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-                <TrendingUp className="w-4 h-4 text-emerald-400" />
-                <span>Total Buses</span>
+            <div className="stat-card bg-[#0f241c] border border-emerald-900/60 rounded-xl p-2.5 sm:p-3.5 shadow-md flex flex-col justify-between hover:border-emerald-700/60 transition">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-slate-400 text-xs mb-1">
+                <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
+                <span className="text-[11px] sm:text-xs">Total Buses</span>
               </div>
               <div>
-                <p className="text-base font-bold text-white">{buses.length}</p>
-                <p className="text-xs text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
+                <p className="text-sm sm:text-base font-bold text-white">{buses.length}</p>
+                <p className="text-[11px] sm:text-xs text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                   <span>{runningBusesCount} Running</span>
                 </p>

@@ -470,7 +470,7 @@ export default function AcademicDocsView() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[560px]">
               <thead>
                 <tr className="border-b border-emerald-950 text-slate-400">
                   <th className="py-2.5 px-3">Test ID</th>

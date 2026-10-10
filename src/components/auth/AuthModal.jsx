@@ -77,9 +77,9 @@ export default function AuthModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
       {/* Background container styled with MUET campus overlay matching Page 1 */}
-      <div className="relative w-full max-w-md bg-[#0a1813] border border-emerald-800/80 rounded-3xl p-6 sm:p-7 shadow-2xl overflow-hidden ring-1 ring-emerald-500/20">
+      <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#0a1813] border border-emerald-800/80 rounded-3xl p-4 sm:p-7 shadow-2xl ring-1 ring-emerald-500/20">
         {/* Subtle decorative glow */}
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 

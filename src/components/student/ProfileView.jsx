@@ -48,7 +48,7 @@ export default function ProfileView() {
   return (
     <div className="max-w-xl mx-auto space-y-6">
       {/* Profile Card matching Mockup */}
-      <div className="bg-[#0b1b14] border border-emerald-950/80 rounded-2xl p-6 shadow-2xl text-center">
+      <div className="bg-[#0b1b14] border border-emerald-950/80 rounded-2xl p-4 sm:p-6 shadow-2xl text-center">
         {/* Avatar circle "ZA" */}
         <div className="w-20 h-20 rounded-full bg-emerald-500 text-slate-950 font-extrabold text-2xl flex items-center justify-center mx-auto mb-3 shadow-xl ring-4 ring-emerald-500/20">
           {currentUser.initials || 'ZA'}

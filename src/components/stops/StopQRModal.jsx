@@ -20,8 +20,8 @@ export default function StopQRModal() {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-[#0b1b14] border border-emerald-800 rounded-2xl w-full max-w-md p-5 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-[#0b1b14] border border-emerald-800 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-5 shadow-2xl">
         <div className="flex items-center justify-between pb-3 border-b border-emerald-950 mb-3">
           <div className="flex items-center gap-2 text-emerald-400">
             <QrCode className="w-5 h-5" />

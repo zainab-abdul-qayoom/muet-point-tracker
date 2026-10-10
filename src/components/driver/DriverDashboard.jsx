@@ -193,14 +193,14 @@ export default function DriverDashboard() {
 
         {/* Right Column: Next Stop Guidance & Waypoints Checklist */}
         <div className="md:col-span-7 space-y-4">
-          <div className="bg-[#0b1b14] border border-emerald-950/80 rounded-2xl p-5 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-emerald-950">
+          <div className="bg-[#0b1b14] border border-emerald-950/80 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-emerald-950 gap-2.5">
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                   Next Designated Stop
                 </span>
-                <h4 className="text-lg font-black text-white flex items-center gap-2 mt-0.5">
-                  <MapPin className="w-5 h-5 text-emerald-400" />
+                <h4 className="text-base sm:text-lg font-black text-white flex items-center gap-2 mt-0.5">
+                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 shrink-0" />
                   <span>{myBus.nextStopName}</span>
                 </h4>
               </div>
@@ -208,7 +208,7 @@ export default function DriverDashboard() {
               {/* Big "Mark Arrived" Button */}
               <button
                 onClick={() => advanceNextStop(myBus.id)}
-                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-950 transition"
+                className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-950 transition"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Mark Arrived at Stop</span>
@@ -265,8 +265,8 @@ export default function DriverDashboard() {
 
       {/* Incident Report Modal */}
       {incidentModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="bg-[#0b1b14] border border-amber-800 rounded-2xl w-full max-w-md p-5 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm">
+          <div className="bg-[#0b1b14] border border-amber-800 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-5 shadow-2xl">
             <h3 className="font-bold text-base text-amber-400 flex items-center gap-2 mb-3">
               <ShieldAlert className="w-5 h-5" />
               <span>Report Driver Road Incident</span>
