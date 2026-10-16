@@ -19,7 +19,8 @@ import { useApp } from '../../context/AppContext';
 import ThemeSwitcher from '../common/ThemeSwitcher';
 
 export default function AuthPage() {
-  const { loginUser, registerStudent } = useApp();
+  const { loginUser, registerStudent, theme = 'dark' } = useApp();
+  const isLight = theme === 'light';
 
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [identifier, setIdentifier] = useState('25BSCS016');
@@ -46,6 +47,7 @@ export default function AuthPage() {
     setErrorMessage('');
     setSuccessMessage('');
     if (role === 'Student') {
+      // Zainab Abdul Qayoom — seeded demo student account (usr-01 in server/db.js)
       setIdentifier('25BSCS016');
       setPassword('password123');
     } else if (role === 'Driver') {
@@ -97,10 +99,10 @@ export default function AuthPage() {
     }
 
     const cleanRoll = rollNo.trim().toUpperCase();
-    // Strict MUET Roll Number Pattern: 2-digit year + 4-letter department + 3-digit number (e.g. 25BSCS016)
-    const rollPattern = /^[0-9]{2}[A-Z]{4}[0-9]{3}$/;
+    // Flexible MUET Roll Number Pattern: 2 or 4-digit batch + department code + 1 to 4 digits (e.g. 25CS16, 25BSCS016, 25ME01, 24SW45)
+    const rollPattern = /^(?:20)?[0-9]{2}[-\s]?[A-Z]{2,6}[-\s]?[0-9]{1,4}$/i;
     if (!rollPattern.test(cleanRoll)) {
-      setErrorMessage('Invalid Roll Number format. Must match official MUET pattern: 25BSCS016 (2-digit year, 4-letter department, 3-digit number).');
+      setErrorMessage('Roll No format: batch year + department code + digits (2 or 3 digits allowed). Examples: 25CS16, 25BSCS016, 25ME01, 24SW45');
       return;
     }
 
@@ -150,18 +152,31 @@ export default function AuthPage() {
   };
 
   return (
-    <div
-      className="min-h-screen w-full relative flex items-center justify-center p-3 sm:p-6 font-sans text-slate-100 overflow-y-auto selection:bg-emerald-500 selection:text-black"
-      style={{
-        backgroundImage: "url('/images/muet-gate-background.jpg')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed'
-      }}
-    >
-      {/* Dark Translucent Overlay matching Institutional Mockup */}
-      <div className="auth-overlay absolute inset-0 bg-gradient-to-b from-[#040e0a]/85 via-[#061610]/80 to-[#020a06]/92 backdrop-blur-[3px] pointer-events-none transition-all duration-300" />
+    <div className={`min-h-screen w-full relative flex items-center justify-center p-3 sm:p-6 font-sans overflow-y-auto selection:bg-emerald-500 selection:text-black transition-colors duration-300 ${
+      isLight ? 'bg-[#F4F7FA] text-[#172B3A]' : 'bg-[#06130e] text-slate-100'
+    }`}>
+      {/* Softly Visible Mehran University Gate Background Layer — Translucent Watermark */}
+      <div
+        className="absolute inset-0 pointer-events-none transition-opacity duration-500"
+        style={{
+          backgroundImage: "url('/assets/muet-gate-background.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed',
+          opacity: isLight ? 0.14 : 0.22,
+          filter: 'contrast(1.08) brightness(0.92)'
+        }}
+      />
+
+      {/* Atmospheric Soft Vignette Overlay */}
+      <div
+        className={`auth-overlay absolute inset-0 pointer-events-none transition-all duration-300 ${
+          isLight
+            ? 'bg-gradient-to-b from-[#F4F7FA]/50 via-transparent to-[#F4F7FA]/60'
+            : 'bg-gradient-to-b from-[#06130e]/45 via-transparent to-[#06130e]/55'
+        }`}
+      />
 
       {/* Top Floating Institutional Theme Switcher */}
       <div className="absolute top-3 sm:top-5 right-3 sm:right-5 z-30">
@@ -169,7 +184,7 @@ export default function AuthPage() {
       </div>
 
       {/* Main Authentication Container */}
-      <div className="relative z-10 w-full max-w-md my-4 sm:my-8 animate-in fade-in zoom-in-95 duration-300">
+      <div className="relative z-10 w-full max-w-xl my-4 sm:my-8 animate-in fade-in zoom-in-95 duration-300">
         <div className="bg-[#091812]/95 border border-emerald-500/30 rounded-3xl p-4 sm:p-8 shadow-2xl shadow-black/80 backdrop-blur-xl ring-1 ring-amber-500/20">
           
           {/* Authentic MUET University Crest Seal Badge */}
@@ -318,10 +333,10 @@ export default function AuthPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-2 bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300 text-slate-950 font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition disabled:opacity-50 text-sm cursor-pointer"
+                className="w-full mt-2 bg-[#087F5B] hover:bg-[#076d4e] active:bg-[#065b41] text-white font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 transition disabled:opacity-50 text-sm cursor-pointer"
               >
                 {isLoading ? (
-                  <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
                     <span>Sign In to Dashboard</span>
@@ -357,33 +372,45 @@ export default function AuthPage() {
                   </span>
                   <span className="text-[10px] text-slate-500">Requires Sign In</span>
                 </p>
-                <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={() => handleQuickFill('Student')}
-                    title="Student: 25BSCS016 / password123"
-                    className="text-[10px] sm:text-[11px] py-1.5 px-1 sm:px-2 rounded-lg bg-[#0c2219] hover:bg-[#123023] border border-emerald-900 text-emerald-300 flex items-center justify-center gap-0.5 sm:gap-1 transition"
+                    title="Student: 25BSCS016 / password123 (Zainab Abdul Qayoom)"
+                    className="text-[10px] sm:text-[11px] py-1.5 px-2 rounded-xl bg-[#0c2219] hover:bg-[#123023] border border-emerald-800 text-emerald-300 flex items-center justify-center gap-1.5 transition group"
                   >
-                    <GraduationCap className="w-3 h-3 text-emerald-400 shrink-0" />
-                    <span className="font-semibold">Student</span>
+                    <img
+                      src="/images/avatars/student-female.jpg"
+                      alt="Student"
+                      className="w-4 h-4 rounded-full object-cover shrink-0 border border-emerald-400 group-hover:scale-110 transition"
+                    />
+                    <span className="font-semibold truncate">Student</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleQuickFill('Driver')}
-                    title="Driver: DRV-7712 / driver123"
-                    className="text-[10px] sm:text-[11px] py-1.5 px-1 sm:px-2 rounded-lg bg-[#0c2219] hover:bg-[#123023] border border-emerald-900 text-amber-300 flex items-center justify-center gap-0.5 sm:gap-1 transition"
+                    title="Driver: DRV-7712 / driver123 (Ahmed Khan)"
+                    className="text-[10px] sm:text-[11px] py-1.5 px-2 rounded-xl bg-[#0c2219] hover:bg-[#123023] border border-amber-900/80 text-amber-300 flex items-center justify-center gap-1.5 transition group"
                   >
-                    <Truck className="w-3 h-3 text-amber-400 shrink-0" />
-                    <span className="font-semibold">Driver</span>
+                    <img
+                      src="/images/avatars/driver.jpg"
+                      alt="Driver"
+                      className="w-4 h-4 rounded-full object-cover shrink-0 border border-amber-400 group-hover:scale-110 transition"
+                    />
+                    <span className="font-semibold truncate">Driver</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleQuickFill('Admin')}
-                    title="Admin: admin@muet.edu.pk / admin123"
-                    className="text-[10px] sm:text-[11px] py-1.5 px-1 sm:px-2 rounded-lg bg-[#0c2219] hover:bg-[#123023] border border-emerald-900 text-purple-300 flex items-center justify-center gap-0.5 sm:gap-1 transition"
+                    title="Admin: admin@muet.edu.pk / admin123 (Dr. Asif Shah)"
+                    className="text-[10px] sm:text-[11px] py-1.5 px-2 rounded-xl bg-[#0c2219] hover:bg-[#123023] border border-purple-900/80 text-purple-300 flex items-center justify-center gap-1.5 transition group"
                   >
-                    <Shield className="w-3 h-3 text-purple-400 shrink-0" />
-                    <span className="font-semibold">Admin</span>
+                    <img
+                      src="/images/avatars/admin.jpg"
+                      alt="Admin"
+                      className="w-4 h-4 rounded-full object-cover shrink-0 border border-purple-400 group-hover:scale-110 transition"
+                    />
+                    <span className="font-semibold truncate">Admin</span>
                   </button>
                 </div>
                 <p className="text-[10px] text-slate-500 text-center mt-2">
@@ -420,7 +447,7 @@ export default function AuthPage() {
                   University Roll Number
                 </label>
                 <p className="text-[11px] text-emerald-400/80 mb-1">
-                  Format: <span className="font-mono font-bold text-amber-300">25BSCS016</span> (2-digit year + 4-letter department + 3-digit number)
+                  Format: <span className="font-mono font-bold text-amber-300">25CS16</span>, <span className="font-mono font-bold text-amber-300">25BSCS016</span>, <span className="font-mono font-bold text-amber-300">25ME01</span>, <span className="font-mono font-bold text-amber-300">24SW45</span> (2 or 3 digits accepted)
                 </p>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-emerald-500/70">
@@ -430,7 +457,7 @@ export default function AuthPage() {
                     type="text"
                     value={registerForm.rollNo}
                     onChange={(e) => setRegisterForm({ ...registerForm, rollNo: e.target.value.toUpperCase() })}
-                    placeholder="e.g. 25BSCS016"
+                    placeholder="e.g. 25CS16 or 25BSCS016"
                     required
                     className="w-full pl-9 pr-3 py-2 bg-[#06130e] border border-emerald-900/80 rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 uppercase font-mono tracking-wide"
                   />
@@ -472,9 +499,17 @@ export default function AuthPage() {
                     <option value="Software Engineering">Software Engineering (SW)</option>
                     <option value="Telecommunication Engineering">Telecommunication Engineering (TL)</option>
                     <option value="Electrical Engineering">Electrical Engineering (EL)</option>
+                    <option value="Electronic Engineering">Electronic Engineering (ES)</option>
                     <option value="Civil Engineering">Civil Engineering (CE)</option>
                     <option value="Mechanical Engineering">Mechanical Engineering (ME)</option>
-                    <option value="Electronic Engineering">Electronic Engineering (ES)</option>
+                    <option value="Mechatronics Engineering">Mechatronics Engineering (MT)</option>
+                    <option value="Industrial Engineering & Management">Industrial Engineering & Management (IE)</option>
+                    <option value="Textile Engineering">Textile Engineering (TE)</option>
+                    <option value="Petroleum Engineering">Petroleum Engineering (PE)</option>
+                    <option value="Environmental Engineering">Environmental Engineering (EV)</option>
+                    <option value="Architecture">Architecture (AR)</option>
+                    <option value="Urban & Regional Planning">Urban & Regional Planning (UP)</option>
+                    <option value="Other / Not Listed">Other / Not Listed</option>
                   </select>
                 </div>
               </div>
@@ -520,10 +555,10 @@ export default function AuthPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-2 bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300 text-slate-950 font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition disabled:opacity-50 text-sm cursor-pointer"
+                className="w-full mt-2 bg-[#087F5B] hover:bg-[#076d4e] active:bg-[#065b41] text-white font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 transition disabled:opacity-50 text-sm cursor-pointer"
               >
                 {isLoading ? (
-                  <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
                     <span>Complete Student Registration</span>

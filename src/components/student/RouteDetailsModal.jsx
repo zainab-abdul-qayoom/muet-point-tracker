@@ -11,21 +11,33 @@ import {
   X
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { getRouteColor } from '../../utils/routeColors';
 
 export default function RouteDetailsModal() {
   const { selectedRoute, setSelectedRoute, setActiveTab } = useApp();
 
   if (!selectedRoute) return null;
 
+  const color = getRouteColor(selectedRoute.id);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#0b1b14] border border-emerald-800/80 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) setSelectedRoute(null);
+      }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
+    >
+      <div className="bg-[#0b1b14] border border-emerald-800/80 rounded-t-3xl sm:rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl max-h-[88dvh] sm:max-h-[90vh] flex flex-col">
+        {/* Mobile drag handle */}
+        <div className="w-12 h-1.5 bg-slate-700/80 rounded-full mx-auto my-2 sm:hidden shrink-0" />
+
         {/* Header matching Mockup */}
         <div className="p-3.5 sm:p-5 border-b border-emerald-950/80 bg-[#0d2219] flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSelectedRoute(null)}
               className="w-8 h-8 rounded-full bg-[#122e22] hover:bg-[#183d2d] flex items-center justify-center text-slate-300 hover:text-white transition"
+              aria-label="Back"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
@@ -34,7 +46,14 @@ export default function RouteDetailsModal() {
                 <h3 className="font-bold text-base sm:text-lg text-white">
                   {selectedRoute.name}
                 </h3>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm"
+                  style={{
+                    backgroundColor: `${color.primary}20`,
+                    color: color.primary,
+                    borderColor: `${color.primary}50`
+                  }}
+                >
                   {selectedRoute.status}
                 </span>
               </div>
@@ -46,7 +65,8 @@ export default function RouteDetailsModal() {
 
           <button
             onClick={() => setSelectedRoute(null)}
-            className="text-slate-400 hover:text-white p-1"
+            className="text-slate-400 hover:text-white p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label="Close route details"
           >
             <X className="w-5 h-5" />
           </button>
@@ -94,12 +114,12 @@ export default function RouteDetailsModal() {
 
                   <div className="bg-[#0e241c] hover:bg-[#143226] border border-emerald-900/60 rounded-xl p-2.5 transition flex items-center justify-between">
                     <div>
-                      <p className="text-xs sm:text-sm font-semibold text-white flex items-center gap-1.5">
+                      <p className="text-xs sm:text-sm font-semibold text-white flex items-center gap-1.5 flex-wrap">
                         <span>{stop.name}</span>
-                        {isFirst && (
+                        {isFirst && !stop.name.includes('(Starting Point)') && (
                           <span className="text-[10px] text-emerald-400 font-normal">(Starting Point)</span>
                         )}
-                        {isLast && (
+                        {isLast && !stop.name.includes('(End Point)') && (
                           <span className="text-[10px] text-emerald-400 font-normal">(End Point)</span>
                         )}
                       </p>
@@ -108,8 +128,8 @@ export default function RouteDetailsModal() {
                       </p>
                     </div>
 
-                    <div className="text-right">
-                      <span className="text-xs font-bold text-emerald-400 bg-[#091711] px-2 py-0.5 rounded border border-emerald-800">
+                    <div className="text-right shrink-0">
+                      <span className="text-xs font-bold text-emerald-400 bg-[#091711] px-2 py-0.5 rounded border border-emerald-800 min-w-[52px] inline-block text-center">
                         {stop.eta}
                       </span>
                     </div>

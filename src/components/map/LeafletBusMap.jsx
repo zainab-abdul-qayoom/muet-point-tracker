@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { useApp } from '../../context/AppContext';
 import { MUET_CAMPUS_COORDS } from '../../data/mockData';
+import { getRouteColor, formatPointNumber, getPointShortNumber } from '../../utils/routeColors';
 
 export default function LeafletBusMap({ height = '460px', showControls = true, focusedBusId = null }) {
   const mapContainerRef = useRef(null);
@@ -10,6 +11,8 @@ export default function LeafletBusMap({ height = '460px', showControls = true, f
   const polylinesRef = useRef([]);
   const stopsLayerRef = useRef(null);
   const tileLayerRef = useRef(null);
+  const [tileError, setTileError] = useState(false);
+  const [isLegendOpen, setIsLegendOpen] = useState(false);
 
   const { buses, routes, setSelectedBus, setSelectedRoute, theme } = useApp();
 
@@ -25,15 +28,18 @@ export default function LeafletBusMap({ height = '460px', showControls = true, f
         attributionControl: false
       });
 
-      // CartoDB tile layer dynamically matches selected theme (Positron light vs Dark matter)
-      const tileUrl = theme === 'light'
-        ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-        : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+      // 100% Free OpenStreetMap tile server with zero watermark
+      const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
       const tileLayer = L.tileLayer(tileUrl, {
         maxZoom: 19,
-        subdomains: 'abcd',
+        subdomains: ['a', 'b', 'c'],
+        className: theme === 'light' ? 'light-osm-tiles' : 'dark-tiles'
       }).addTo(map);
+
+      tileLayer.on('tileerror', () => {
+        setTileError(true);
+      });
 
       tileLayerRef.current = tileLayer;
 
@@ -56,13 +62,36 @@ export default function LeafletBusMap({ height = '460px', showControls = true, f
     };
   }, []);
 
-  // Update Tile Layer dynamically when Theme changes
+  // Invalidate size when height prop changes or container mounts
   useEffect(() => {
-    if (tileLayerRef.current) {
-      const tileUrl = theme === 'light'
-        ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-        : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-      tileLayerRef.current.setUrl(tileUrl);
+    if (mapInstanceRef.current) {
+      const t1 = setTimeout(() => {
+        mapInstanceRef.current?.invalidateSize();
+      }, 100);
+      const t2 = setTimeout(() => {
+        mapInstanceRef.current?.invalidateSize();
+      }, 300);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, [height]);
+
+  // Update Tile Layer theme dynamically
+  useEffect(() => {
+    if (tileLayerRef.current && mapInstanceRef.current) {
+      const container = mapContainerRef.current;
+      if (container) {
+        const tiles = container.querySelectorAll('.leaflet-tile-pane');
+        tiles.forEach((t) => {
+          if (theme === 'light') {
+            t.classList.remove('dark-tiles');
+          } else {
+            t.classList.add('dark-tiles');
+          }
+        });
+      }
     }
   }, [theme]);
 
@@ -146,49 +175,48 @@ export default function LeafletBusMap({ height = '460px', showControls = true, f
     stopsLayerRef.current = stopsGroup;
   }, [routes, theme]);
 
-  // Update Bus Markers
+  // Update Point Markers
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
     (buses || []).forEach((bus) => {
-      // Don't render offline/inactive buses without valid coordinates
+      // Don't render offline/inactive points without valid coordinates
       const coords = bus.coords || (bus.current_lat != null && bus.current_lng != null ? [Number(bus.current_lat), Number(bus.current_lng)] : null);
       if (!coords || !Array.isArray(coords) || coords.length !== 2 || isNaN(coords[0]) || isNaN(coords[1])) {
         return;
       }
 
       const isFocused = focusedBusId === bus.id;
-      const isBus03 = bus.number === 'Bus 03';
+      const routeConfig = getRouteColor(bus.routeId);
+      const pointLabel = formatPointNumber(bus.number);
+      const shortNum = getPointShortNumber(bus.number);
 
       const tagBgClass = theme === 'light'
         ? 'bg-white/95 border border-slate-300 text-slate-800 shadow'
-        : 'bg-[#0b1b15]/95 border border-emerald-500/40 text-emerald-300 shadow-lg';
-
-      const pinBgClass = theme === 'light'
-        ? (isBus03 ? 'bg-blue-600 text-white' : 'bg-slate-800 text-blue-300 border border-blue-400')
-        : (isBus03 ? 'bg-emerald-500 text-slate-950' : 'bg-[#153427] text-emerald-400 border border-emerald-400/50');
+        : 'bg-[#0f172a]/95 border border-slate-700/80 text-slate-100 shadow-xl';
 
       const markerHtml = `
         <div class="relative group cursor-pointer flex flex-col items-center">
-          <!-- Floating ETA tag -->
-          <div class="absolute -top-9 whitespace-nowrap ${tagBgClass} backdrop-blur-md px-2 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1.5 transition-transform hover:scale-105 z-20">
-            <span class="w-1.5 h-1.5 rounded-full ${bus.isOnline ? (theme === 'light' ? 'bg-blue-500 animate-ping' : 'bg-emerald-400 animate-ping') : 'bg-slate-400'}"></span>
-            <span>${bus.number}</span>
+          <!-- Floating ETA tag: compact on mobile to prevent label collision -->
+          <div class="absolute -top-9 whitespace-nowrap ${tagBgClass} backdrop-blur-md px-2 py-0.5 rounded-full text-[10.5px] font-bold flex items-center gap-1.5 transition-transform hover:scale-105 z-20">
+            <span class="w-1.5 h-1.5 rounded-full ${bus.isOnline ? 'bg-[#22C55E] animate-ping' : 'bg-slate-400'}"></span>
+            <span style="color: ${routeConfig.hex}">${pointLabel}</span>
             <span class="${theme === 'light' ? 'text-slate-500' : 'text-slate-400'} font-normal">ETA ${bus.eta || '5 min'}</span>
           </div>
 
-          <!-- Bus Pin Marker -->
-          <div class="w-8 h-8 rounded-full ${pinBgClass} flex items-center justify-center shadow-lg relative ${bus.isOnline ? 'bus-pulse' : ''}">
-            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-              <path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/>
-            </svg>
+          <!-- Point Badge Marker: displays route-colored number -->
+          <div
+            style="background-color: ${routeConfig.hex}; box-shadow: 0 0 14px ${bus.isOnline ? routeConfig.hex + '88' : 'transparent'};"
+            class="w-7 h-7 sm:w-8 sm:h-8 rounded-full text-slate-950 font-black text-[11px] sm:text-xs flex items-center justify-center border-2 border-white shadow-lg relative ${bus.isOnline ? 'bus-pulse' : ''}"
+          >
+            ${shortNum}
           </div>
         </div>
       `;
 
       const customIcon = L.divIcon({
-        className: 'custom-bus-marker',
+        className: 'custom-point-marker',
         html: markerHtml,
         iconSize: [36, 48],
         iconAnchor: [18, 24]
@@ -220,7 +248,7 @@ export default function LeafletBusMap({ height = '460px', showControls = true, f
       }
     });
 
-    // Cleanup decommissioned buses
+    // Cleanup decommissioned points
     Object.keys(markersRef.current).forEach((busId) => {
       if (!buses.some((b) => b.id === busId)) {
         try {
@@ -229,11 +257,25 @@ export default function LeafletBusMap({ height = '460px', showControls = true, f
         delete markersRef.current[busId];
       }
     });
-  }, [buses, focusedBusId, theme]);
+  }, [buses, focusedBusId, theme, routes]);
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden border border-emerald-950/60 shadow-2xl bg-[#091510]">
-      <div ref={mapContainerRef} style={{ height }} className="w-full z-10" />
+    <div
+      className="relative w-full rounded-xl overflow-hidden border border-emerald-950/60 shadow-2xl bg-[#091510] flex-1"
+      style={{ minHeight: '340px', height: height === '100%' ? '100%' : 'auto' }}
+    >
+      <div
+        ref={mapContainerRef}
+        style={{ height, minHeight: '340px' }}
+        className="w-full h-full z-10"
+      />
+
+      {/* Friendly Tile Fallback Overlay */}
+      {tileError && (
+        <div className="absolute top-3 left-3 z-20 bg-amber-950/80 border border-amber-600/50 text-amber-200 text-[11px] px-2.5 py-1 rounded-lg backdrop-blur-md">
+          <span>Map tile service offline • Live telemetry markers active</span>
+        </div>
+      )}
 
       {/* Floating Center on MUET button */}
       <button
@@ -243,26 +285,61 @@ export default function LeafletBusMap({ height = '460px', showControls = true, f
           }
         }}
         title="Recenter on MUET Jamshoro"
-        className="absolute bottom-4 left-4 z-20 bg-[#0f221a]/90 hover:bg-[#153427] text-emerald-400 border border-emerald-800/70 p-2 sm:p-2.5 rounded-lg shadow-lg text-[11px] sm:text-xs font-medium flex items-center gap-1.5 backdrop-blur-sm transition-all"
+        className="absolute bottom-4 left-4 z-20 bg-[#0f221a]/90 hover:bg-[#153427] text-emerald-400 border border-emerald-800/70 p-2 sm:p-2.5 rounded-lg shadow-lg text-[11px] sm:text-xs font-medium flex items-center gap-1.5 backdrop-blur-sm transition-all cursor-pointer"
       >
         <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-        MUET Main Campus
+        <span>MUET Main Campus</span>
       </button>
 
-      {/* Map Legend Overlay */}
-      <div className="absolute top-3 right-3 z-20 hidden sm:flex items-center gap-3 bg-[#0c1c15]/90 border border-emerald-900/60 px-3 py-1.5 rounded-lg backdrop-blur-md text-[11px] text-slate-300">
-        <div className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-          <span>Route 02 (Tando Bago)</span>
+      {/* Responsive Map Legend */}
+      <div className="absolute top-3 right-3 z-20">
+        {/* Desktop Legend */}
+        <div className="hidden sm:flex items-center gap-3 bg-[#0c1c15]/90 border border-emerald-900/60 px-3 py-1.5 rounded-lg backdrop-blur-md text-[11px] text-slate-300">
+          <div className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
+            <span>Route 02 (Tando Bago)</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#a855f7]"></span>
+            <span>Route 03 (DMC)</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#f97316]"></span>
+            <span>Route 04 (Hyderabad)</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
-          <span>Route 03 (DMC)</span>
+
+        {/* Mobile Collapsible Legend */}
+        <div className="sm:hidden">
+          <button
+            onClick={() => setIsLegendOpen(!isLegendOpen)}
+            className="bg-[#0c1c15]/95 border border-emerald-900/60 px-2 py-1 rounded-lg backdrop-blur-md text-[10px] text-slate-300 flex items-center gap-1"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>Routes Legend {isLegendOpen ? '▴' : '▾'}</span>
+          </button>
+          {isLegendOpen && (
+            <div className="mt-1 bg-[#0c1c15]/95 border border-emerald-900/60 p-2 rounded-lg backdrop-blur-md text-[10px] text-slate-300 space-y-1 shadow-xl">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#10b981]"></span>
+                <span>Route 02: Tando Bago</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#a855f7]"></span>
+                <span>Route 03: DMC / Kotri</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#f97316]"></span>
+                <span>Route 04: Hyderabad City</span>
+              </div>
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-orange-400"></span>
-          <span>Route 04 (Hyderabad)</span>
-        </div>
+      </div>
+
+      {/* Attribution */}
+      <div className="absolute bottom-1 right-12 z-20 text-[9px] text-slate-500 bg-black/40 px-1 rounded pointer-events-none">
+        © OpenStreetMap contributors
       </div>
     </div>
   );

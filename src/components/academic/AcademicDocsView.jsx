@@ -124,7 +124,7 @@ export default function AcademicDocsView() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-[#0b1b14] p-1.5 rounded-2xl border border-emerald-950/80 flex flex-wrap gap-1 text-xs">
+      <div className="bg-[#0b1b14] p-1.5 rounded-2xl border border-emerald-950/80 flex overflow-x-auto no-scrollbar sm:flex-wrap gap-1 text-xs">
         {[
           { id: 'srs', label: '1. SRS Requirements', icon: FileText },
           { id: 'diagrams', label: '2. UML & Architecture', icon: Workflow },
@@ -138,7 +138,7 @@ export default function AcademicDocsView() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 min-w-[140px] py-2 px-3 rounded-xl font-bold transition flex items-center justify-center gap-2 ${
+              className={`shrink-0 sm:flex-1 min-w-[130px] sm:min-w-[140px] py-2 px-3 rounded-xl font-bold transition flex items-center justify-center gap-2 whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'bg-emerald-500 text-slate-950 shadow-md'
                   : 'text-slate-400 hover:text-white'

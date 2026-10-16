@@ -20,6 +20,7 @@ import AITransportAssistant from './components/ai/AITransportAssistant';
 import ReportIssueModal from './components/student/ReportIssueModal';
 import StopQRModal from './components/stops/StopQRModal';
 import AuthPage from './components/auth/AuthPage';
+import SavedRoutes from './components/student/SavedRoutes.jsx';
 
 function MainLayout() {
   const {
@@ -101,9 +102,10 @@ function MainLayout() {
           {activeTab === 'routes' && <BusRoutesView />}
           {activeTab === 'my-stops' && <MyStopsView />}
           {activeTab === 'schedule' && <BusSchedule />}
+          {activeTab === 'saved-routes' && <SavedRoutes />}
           {activeTab === 'notifications' && <NotificationsView />}
           {activeTab === 'profile' && <ProfileView />}
-          {activeTab === 'academic' && <AcademicDocsView />}
+          {(activeTab === 'academic' || activeTab === 'academic-docs') && <AcademicDocsView />}
 
           {/* Role Protected Admin Tab */}
           {activeTab === 'admin-fleet' && (
@@ -145,17 +147,23 @@ function MainLayout() {
             )
           )}
 
-          {/* Bottom Brand Tagline matching Mockup Footer */}
-          <footer className="mt-12 pt-6 pb-4 border-t border-emerald-950/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+          {/* Bottom Institutional Footer matching reference image */}
+          <footer className="mt-8 pt-4 pb-4 border-t border-emerald-950/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-3">
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span className="text-emerald-400/90 font-medium tracking-wide">
-                Safe Travels • Better Connectivity • A Smarter MUET
+              <img src="/assets/muet_logo_seal.jpg" alt="MUET" className="w-4 h-4 rounded-full object-contain" />
+              <span className="font-bold text-white">
+                MUET Point Tracker
               </span>
+              <span className="text-slate-500 font-normal hidden sm:inline">| Real-time Tracking · Safe Campus · Smarter Transport</span>
             </div>
-            <p className="text-[11px] text-slate-500">
-              Mehran University of Engineering & Technology, Jamshoro, Sindh, Pakistan
-            </p>
+            <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-emerald-400 font-semibold">System Online</span>
+              <span className="text-slate-600">|</span>
+              <span>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+              <span className="text-slate-600">|</span>
+              <span>{new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+            </div>
           </footer>
         </main>
       </div>

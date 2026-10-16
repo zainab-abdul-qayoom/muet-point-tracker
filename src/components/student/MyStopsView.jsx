@@ -1,16 +1,10 @@
-import React, { useState } from 'react';
-import { MapPin, Navigation, Clock, Bookmark, Bus, Footprints, ArrowRight } from 'lucide-react';
+import React from 'react';
+import { MapPin, Navigation, Clock, Bookmark, Bus, Footprints, ArrowRight, Star } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { getRouteColor } from '../../utils/routeColors';
 
 export default function MyStopsView() {
-  const { routes, currentUser, setSelectedRoute, setActiveTab } = useApp();
-  const [favoriteStops, setFavoriteStops] = useState(['s-02', 's-01', 's-07']);
-
-  const toggleFavorite = (stopId) => {
-    setFavoriteStops((prev) =>
-      prev.includes(stopId) ? prev.filter((id) => id !== stopId) : [...prev, stopId]
-    );
-  };
+  const { routes, currentUser, setSelectedRoute, setActiveTab, favorites, toggleFavoriteStop } = useApp();
 
   const allStops = routes.flatMap((r) =>
     r.stops.map((s) => ({ ...s, routeId: r.id, routeName: r.name, routeNumber: r.number }))
@@ -21,7 +15,7 @@ export default function MyStopsView() {
       <div>
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
           <MapPin className="w-5 h-5 text-emerald-400" />
-          <span>My Bus Stops & Walking Directions</span>
+          <span>My Point Stops & Walking Directions</span>
         </h2>
         <p className="text-xs text-slate-400 mt-0.5">
           Designated campus pickup points, walking time estimates and bookmarked stops
@@ -67,7 +61,8 @@ export default function MyStopsView() {
 
         <div className="space-y-3">
           {allStops.slice(0, 8).map((stop) => {
-            const isFav = favoriteStops.includes(stop.id);
+            const isFav = favorites?.stops?.includes(stop.id);
+            const color = getRouteColor(stop.routeId);
 
             return (
               <div
@@ -75,7 +70,14 @@ export default function MyStopsView() {
                 className="p-3 sm:p-3.5 bg-[#0e241c] hover:bg-[#143226] border border-emerald-900/60 rounded-xl flex items-center justify-between gap-2 transition group"
               >
                 <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center text-emerald-400 shrink-0">
+                  <div
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 border"
+                    style={{
+                      backgroundColor: `${color.primary}15`,
+                      borderColor: `${color.primary}40`,
+                      color: color.primary
+                    }}
+                  >
                     <MapPin className="w-4 h-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -92,10 +94,11 @@ export default function MyStopsView() {
                   </span>
 
                   <button
-                    onClick={() => toggleFavorite(stop.id)}
+                    onClick={() => toggleFavoriteStop(stop.id)}
                     className="p-1 sm:p-1.5 hover:text-emerald-400 text-slate-400 transition"
+                    title={isFav ? 'Remove bookmark' : 'Bookmark stop'}
                   >
-                    <Bookmark className={`w-4 h-4 ${isFav ? 'text-emerald-400 fill-emerald-400' : ''}`} />
+                    <Bookmark className={`w-4 h-4 ${isFav ? 'text-amber-400 fill-amber-400' : ''}`} />
                   </button>
                 </div>
               </div>

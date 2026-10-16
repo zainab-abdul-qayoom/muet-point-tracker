@@ -34,6 +34,7 @@ export function getDatabase() {
       role TEXT NOT NULL,
       department TEXT,
       password_hash TEXT,
+      avatar TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -121,6 +122,19 @@ export function getDatabase() {
     );
   `);
 
+  // Migration: create issues table if not exists
+  dbInstance.exec(`
+    CREATE TABLE IF NOT EXISTS issues (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      status TEXT DEFAULT 'Open',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
   seedInitialData(dbInstance);
 
   return dbInstance;
@@ -139,27 +153,77 @@ function seedInitialData(db) {
       }
     }
 
+    // Ensure avatar column exists on existing installations
+    try {
+      db.exec('ALTER TABLE users ADD COLUMN avatar TEXT');
+    } catch {}
+
+    // Populate avatars for demo users
+    db.prepare("UPDATE users SET avatar = '/images/avatars/student-female.jpg' WHERE id = 'usr-01' OR roll_no = '25BSCS016'").run();
+    db.prepare("UPDATE users SET avatar = '/images/avatars/driver.jpg' WHERE id = 'usr-02' OR roll_no = 'DRV-7712'").run();
+    db.prepare("UPDATE users SET avatar = '/images/avatars/admin.jpg' WHERE id = 'usr-03' OR email = 'admin@muet.edu.pk'").run();
+
+    // Migrate Zainab's roll to standard format if it still has any old legacy format
+    db.prepare("UPDATE users SET roll_no = '25BSCS016' WHERE id = 'usr-01' AND roll_no IN ('MUET-2023-CS-001', '25BSCS001')").run();
+
     // Ensure standard demo roll number 25BSCS016 is also available
     const has25BSCS = db.prepare('SELECT id FROM users WHERE UPPER(roll_no) = ?').get('25BSCS016');
     if (!has25BSCS) {
       db.prepare(`
-        INSERT INTO users (id, name, email, roll_no, role, department, password_hash)
-        VALUES (?, ?, ?, ?, 'Student', ?, ?)
-      `).run('usr-25bscs', 'Bilal Ahmed', 'bilal.25bscs016@muet.edu.pk', '25BSCS016', 'Computer Systems Engineering', hashPassword('password123'));
+        INSERT INTO users (id, name, email, roll_no, role, department, password_hash, avatar)
+        VALUES (?, ?, ?, ?, 'Student', ?, ?, ?)
+      `).run('usr-25bscs', 'Bilal Ahmed', 'bilal.25bscs016@muet.edu.pk', '25BSCS016', 'Computer Systems Engineering', hashPassword('password123'), '/images/avatars/student-female.jpg');
     }
+
+    // Idempotent migration: Ensure campus locations exist in stops
+    const campusStops = [
+      ['s-zp', 'route-02', 'Zero Point', 2, 25.4070, 68.2625, '2 min', 1],
+      ['s-cc', 'route-02', 'Central Cafeteria (CC)', 3, 25.4072, 68.2628, '3 min', 1],
+      ['s-ccps', 'route-02', 'CC Point Stand near Central Cafeteria', 4, 25.4074, 68.2630, '4 min', 1],
+      ['s-cl', 'route-02', 'Central Library (CL)', 5, 25.4045, 68.2585, '6 min', 1],
+      ['s-gym', 'route-02', 'Gymnasium', 6, 25.4020, 68.2570, '9 min', 1],
+      ['s-dms', 'route-02', 'DMS', 7, 25.4050, 68.2605, '12 min', 1]
+    ];
+    for (const [id, rId, name, order, lat, lng, eta, major] of campusStops) {
+      const exists = db.prepare('SELECT id FROM stops WHERE id = ? OR name = ?').get(id, name);
+      if (!exists) {
+        db.prepare(`
+          INSERT INTO stops (id, route_id, name, stop_order, lat, lng, eta_text, is_major)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(id, rId, name, order, lat, lng, eta, major);
+      }
+    }
+
+    // Idempotent migration: Ensure key numbered points (Point 3, Point 29, Point 32, Point 33) exist
+    const numberedPoints = [
+      ['bus-03', 'Bus 03', 'GSA-4412', 'route-02', 'drv-03', 'Ahmed Khan', 'Arriving', 65, 48, '38 km/h', '4 min', 25.4080, 68.2635, 'Academic Block', 'Zero Point', 1],
+      ['bus-29', 'Bus 29', 'GSA-7829', 'route-02', 'drv-29', 'Mukhtiar Chandio', 'On Route', 65, 44, '36 km/h', '5 min', 25.4074, 68.2630, 'CC Point Stand', 'Central Library (CL)', 1],
+      ['bus-32', 'Bus 32', 'GSA-8932', 'route-04', 'drv-32', 'Abdul Sattar', 'On Route', 65, 51, '40 km/h', '8 min', 25.4045, 68.2585, 'Central Library (CL)', 'Gymnasium', 1],
+      ['bus-33', 'Bus 33', 'GSA-9133', 'route-01', 'drv-33', 'Naveed Solangi', 'Arriving', 65, 38, '35 km/h', '3 min', 25.4070, 68.2625, 'Zero Point', 'DMS', 1]
+    ];
+    for (const [id, num, plate, rId, dId, dName, st, cap, pass, spd, eta, lat, lng, loc, next, online] of numberedPoints) {
+      const exists = db.prepare('SELECT id FROM buses WHERE id = ? OR number = ?').get(id, num);
+      if (!exists) {
+        db.prepare(`
+          INSERT INTO buses (id, number, plate, route_id, driver_id, driver_name, status, capacity, passengers, speed, eta, current_lat, current_lng, current_location_name, next_stop_name, is_online)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(id, num, plate, rId, dId, dName, st, cap, pass, spd, eta, lat, lng, loc, next, online);
+      }
+    }
+
     return;
   }
 
   // Insert Users with secure scrypt hashes
   const insertUser = db.prepare(`
-    INSERT INTO users (id, name, email, roll_no, role, department, password_hash)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO users (id, name, email, roll_no, role, department, password_hash, avatar)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  insertUser.run('usr-01', 'Zainab Abdul Qayoom', 'zainab@gmail.com', 'MUET-2023-CS-001', 'Student', 'Computer Science', hashPassword('password123'));
-  insertUser.run('usr-25bscs', 'Bilal Ahmed', 'bilal.25bscs016@muet.edu.pk', '25BSCS016', 'Student', 'Computer Systems Engineering', hashPassword('password123'));
-  insertUser.run('usr-02', 'Ahmed Khan', 'ahmed.driver@muet.edu.pk', 'DRV-7712', 'Driver', 'Transport Section', hashPassword('driver123'));
-  insertUser.run('usr-03', 'Dr. Asif Shah', 'admin@muet.edu.pk', 'ADM-001', 'Admin', 'Transport Directorate', hashPassword('admin123'));
+  insertUser.run('usr-01', 'Zainab Abdul Qayoom', 'zainab@gmail.com', '25BSCS016', 'Student', 'Computer Science', hashPassword('password123'), '/images/avatars/student-female.jpg');
+  insertUser.run('usr-25bscs', 'Bilal Ahmed', 'bilal.25bscs016@muet.edu.pk', '25BSCS016', 'Student', 'Computer Systems Engineering', hashPassword('password123'), '/images/avatars/student-female.jpg');
+  insertUser.run('usr-02', 'Ahmed Khan', 'ahmed.driver@muet.edu.pk', 'DRV-7712', 'Driver', 'Transport Section', hashPassword('driver123'), '/images/avatars/driver.jpg');
+  insertUser.run('usr-03', 'Dr. Asif Shah', 'admin@muet.edu.pk', 'ADM-001', 'Admin', 'Transport Directorate', hashPassword('admin123'), '/images/avatars/admin.jpg');
 
   // Insert Routes
   const insertRoute = db.prepare(`
@@ -191,11 +255,16 @@ function seedInitialData(db) {
     ['h-08', 'route-01', 'Hala N-5 City Gate', 8, 25.8100, 68.4200, '55 min', 1],
     // Route 02: Tando Bago
     ['s-01', 'route-02', 'Main Campus (Starting Point)', 1, 25.4057, 68.2618, '0 min', 1],
-    ['s-02', 'route-02', 'Academic Block', 2, 25.4080, 68.2635, '2 min', 1],
-    ['s-03', 'route-02', 'Engineering Faculty', 3, 25.4065, 68.2600, '5 min', 0],
-    ['s-04', 'route-02', 'Central Library', 4, 25.4045, 68.2585, '8 min', 0],
-    ['s-05', 'route-02', 'Sports Complex', 5, 25.4020, 68.2570, '12 min', 0],
-    ['s-06', 'route-02', 'Tando Bago Terminal (End Point)', 6, 25.3100, 68.3800, '35 min', 1],
+    ['s-zp', 'route-02', 'Zero Point', 2, 25.4070, 68.2625, '2 min', 1],
+    ['s-cc', 'route-02', 'Central Cafeteria (CC)', 3, 25.4072, 68.2628, '3 min', 1],
+    ['s-ccps', 'route-02', 'CC Point Stand near Central Cafeteria', 4, 25.4074, 68.2630, '4 min', 1],
+    ['s-04', 'route-02', 'Central Library (CL)', 5, 25.4045, 68.2585, '6 min', 1],
+    ['s-gym', 'route-02', 'Gymnasium', 6, 25.4020, 68.2570, '9 min', 1],
+    ['s-dms', 'route-02', 'DMS', 7, 25.4050, 68.2605, '12 min', 1],
+    ['s-02', 'route-02', 'Academic Block', 8, 25.4080, 68.2635, '15 min', 1],
+    ['s-03', 'route-02', 'Engineering Faculty', 9, 25.4065, 68.2600, '18 min', 0],
+    ['s-05', 'route-02', 'Sports Complex', 10, 25.4020, 68.2570, '22 min', 0],
+    ['s-06', 'route-02', 'Tando Bago Terminal (End Point)', 11, 25.3100, 68.3800, '35 min', 1],
     // Route 03: DMC / Kotri
     ['d-01', 'route-03', 'Main Campus Terminal', 1, 25.4057, 68.2618, '0 min', 1],
     ['d-02', 'route-03', 'Thermal Power Station Stop', 2, 25.3950, 68.2850, '6 min', 0],
@@ -229,9 +298,12 @@ function seedInitialData(db) {
   `);
 
   insertBus.run('bus-01', 'Bus 01', 'GSA-2041', 'route-01', 'drv-01', 'Rasheed Ahmed', 'Arriving', 65, 52, '42 km/h', '2 min', 25.4110, 68.2660, 'MUET Main Gate', 'Jamshoro Bypass', 1);
-  insertBus.run('bus-03', 'Bus 03', 'GSA-4412', 'route-02', 'drv-03', 'Ahmed Khan', 'Arriving', 65, 48, '38 km/h', '4 min', 25.4080, 68.2635, 'Academic Block', 'Engineering Faculty', 1);
+  insertBus.run('bus-03', 'Bus 03', 'GSA-4412', 'route-02', 'drv-03', 'Ahmed Khan', 'Arriving', 65, 48, '38 km/h', '4 min', 25.4080, 68.2635, 'Academic Block', 'Zero Point', 1);
   insertBus.run('bus-05', 'Bus 05', 'GSA-3390', 'route-03', 'drv-05', 'Tariq Baloch', 'On Route', 60, 58, '45 km/h', '8 min', 25.3700, 68.3100, 'Kotri Barrage', 'SITE Area Kotri', 1);
   insertBus.run('bus-07', 'Bus 07', 'GSA-5108', 'route-04', 'drv-07', 'Ghulam Nabi', 'On Route', 65, 42, '40 km/h', '12 min', 25.4000, 68.3450, 'Qasim Chowk', 'Gul Center', 1);
+  insertBus.run('bus-29', 'Bus 29', 'GSA-7829', 'route-02', 'drv-29', 'Mukhtiar Chandio', 'On Route', 65, 44, '36 km/h', '5 min', 25.4074, 68.2630, 'CC Point Stand', 'Central Library (CL)', 1);
+  insertBus.run('bus-32', 'Bus 32', 'GSA-8932', 'route-04', 'drv-32', 'Abdul Sattar', 'On Route', 65, 51, '40 km/h', '8 min', 25.4045, 68.2585, 'Central Library (CL)', 'Gymnasium', 1);
+  insertBus.run('bus-33', 'Bus 33', 'GSA-9133', 'route-01', 'drv-33', 'Naveed Solangi', 'Arriving', 65, 38, '35 km/h', '3 min', 25.4070, 68.2625, 'Zero Point', 'DMS', 1);
   insertBus.run('bus-11', 'Bus 11', 'GSA-3312', 'route-02', 'drv-11', 'Mansoor Jamali', 'Maintenance', 65, 0, '0 km/h', 'Offline', 25.4020, 68.2570, 'Transport Workshop', 'N/A', 0);
   insertBus.run('bus-12', 'Bus 12', 'GSA-4902', 'route-01', 'drv-12', 'Khadim Hussain', 'Inactive', 65, 0, '0 km/h', 'Standby', 25.4057, 68.2618, 'Main Campus Terminal', 'N/A', 0);
 

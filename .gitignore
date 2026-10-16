@@ -35,6 +35,7 @@ Thumbs.db
 # Temporary test logs & scratch files
 test_verification.mjs
 *.log
+test-screenshots/
 
 # Secrets and environment configuration
 .env.*
@@ -46,3 +47,11 @@ test_verification.mjs
 *.sqlite
 *.sqlite3
 *.sqlite-*
+
+# All SQLite backup files
+*.sqlite.backup*
+*.sqlite3.backup*
+*.bak
+
+# Additional environment and credential files
+!.env.example

@@ -16,6 +16,7 @@ import {
   Edit2
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { formatPointNumber } from '../../utils/routeColors';
 
 export default function AdminDashboard() {
   const {
@@ -27,12 +28,57 @@ export default function AdminDashboard() {
     addBus,
     deleteBus,
     updateBus,
-    setActiveTab
+    setActiveTab,
+    authToken
   } = useApp();
 
   const [activeAdminSubTab, setActiveAdminSubTab] = useState('overview'); // overview | buses | drivers | broadcast
   const [showAddBusModal, setShowAddBusModal] = useState(false);
   const [showAlertModal, setShowAlertModal] = useState(false);
+  const [issuesList, setIssuesList] = useState([]);
+  const [isLoadingIssues, setIsLoadingIssues] = useState(false);
+
+  // Load issues from backend
+  const loadAdminIssues = React.useCallback(async () => {
+    setIsLoadingIssues(true);
+    try {
+      const token = authToken || sessionStorage.getItem('muet_tracker_token');
+      const res = await fetch('/api/issues', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setIssuesList(data.data);
+      }
+    } catch (err) {
+      console.warn('Failed to load issues for admin:', err);
+    } finally {
+      setIsLoadingIssues(false);
+    }
+  }, [authToken]);
+
+  React.useEffect(() => {
+    loadAdminIssues();
+  }, [loadAdminIssues]);
+
+  const handleUpdateIssueStatus = async (issueId, newStatus) => {
+    try {
+      const token = authToken || sessionStorage.getItem('muet_tracker_token');
+      await fetch(`/api/issues/${issueId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      setIssuesList((prev) =>
+        prev.map((iss) => (iss.id === issueId ? { ...iss, status: newStatus } : iss))
+      );
+    } catch (err) {
+      console.warn('Failed to update issue status:', err);
+    }
+  };
 
   // New bus form state
   const [newBusForm, setNewBusForm] = useState({
@@ -127,14 +173,24 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Admin Action Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Shield className="w-5 h-5 text-emerald-400" />
-            <span>Transport Administration Control Center</span>
-          </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Fleet operations, route dispatching and emergency campus broadcasts
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl overflow-hidden border border-purple-500/40 bg-purple-950/30 shrink-0">
+            <img
+              src="/images/avatars/admin.jpg"
+              alt="Admin"
+              className="w-full h-full object-cover"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <Shield className="w-5 h-5 text-emerald-400" />
+              <span>Transport Administration Control Center</span>
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Director: <strong className="text-white">Dr. Asif Shah</strong> • Transport Directorate
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto">
@@ -159,17 +215,17 @@ export default function AdminDashboard() {
             className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-950"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Bus</span>
+            <span>Add Point</span>
           </button>
         </div>
       </div>
 
       {/* Stats Cards matching Mockup exactly */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
-        {/* Total Buses */}
+        {/* Total Points */}
         <div className="bg-[#0b1b14] border border-emerald-900/70 rounded-2xl p-3 sm:p-4 shadow-lg flex items-center justify-between">
           <div>
-            <span className="text-[11px] sm:text-xs text-slate-400 font-medium">Total Buses</span>
+            <span className="text-[11px] sm:text-xs text-slate-400 font-medium">Total Points</span>
             <p className="text-xl sm:text-2xl font-black text-white mt-0.5">{totalBuses}</p>
           </div>
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-emerald-950 border border-emerald-800/60 flex items-center justify-center text-emerald-400 shrink-0">
@@ -177,10 +233,10 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Active Buses */}
+        {/* Active Points */}
         <div className="bg-[#0b1b14] border border-emerald-900/70 rounded-2xl p-3 sm:p-4 shadow-lg flex items-center justify-between">
           <div>
-            <span className="text-[11px] sm:text-xs text-slate-400 font-medium">Active Buses</span>
+            <span className="text-[11px] sm:text-xs text-slate-400 font-medium">Active Points</span>
             <p className="text-xl sm:text-2xl font-black text-emerald-400 mt-0.5">{activeBuses}</p>
           </div>
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-emerald-950 border border-emerald-800/60 flex items-center justify-center text-emerald-400 shrink-0">
@@ -215,7 +271,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Bus Status Donut Widget */}
         <div className="lg:col-span-5 bg-[#0b1b14] border border-emerald-950/80 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
-          <h3 className="font-bold text-sm text-white mb-3">Bus Status</h3>
+          <h3 className="font-bold text-sm text-white mb-3">Point Fleet Status</h3>
 
           <div className="flex flex-col sm:flex-row items-center justify-around gap-6 my-auto">
             {/* SVG Donut Chart */}
@@ -316,7 +372,7 @@ export default function AdminDashboard() {
       {/* Fleet Management Table */}
       <div className="bg-[#0b1b14] border border-emerald-950/80 rounded-2xl p-5 shadow-xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-base text-white">MUET Bus Fleet Roster</h3>
+          <h3 className="font-bold text-base text-white">MUET Point Fleet Roster</h3>
           <span className="text-xs text-slate-400">Total {buses.length} registered vehicles</span>
         </div>
 
@@ -338,7 +394,7 @@ export default function AdminDashboard() {
                 <tr key={bus.id} className="hover:bg-[#0e241c] transition">
                   <td className="py-3 px-3 font-bold text-white flex items-center gap-2">
                     <Bus className="w-4 h-4 text-emerald-400" />
-                    <span>{bus.number}</span>
+                    <span>{formatPointNumber(bus.number)}</span>
                   </td>
                   <td className="py-3 px-3 text-slate-300 font-mono">{bus.plate}</td>
                   <td className="py-3 px-3 text-slate-300">{bus.routeName}</td>
@@ -384,14 +440,119 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Student Incident & Transport Grievance Reports Section */}
+      <div className="bg-[#0b1b14] border border-emerald-950/80 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-emerald-950 pb-3">
+          <div>
+            <h3 className="font-bold text-sm text-white flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400" />
+              <span>Campus Incident & Grievance Reports</span>
+              <span className="text-xs bg-amber-950 text-amber-400 px-2 py-0.5 rounded-full border border-amber-800">
+                {issuesList.filter((i) => i.status === 'Open').length} Open
+              </span>
+            </h3>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Review passenger incident submissions, point delays, and overcrowding reports from students
+            </p>
+          </div>
+          <button
+            onClick={loadAdminIssues}
+            className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold px-2.5 py-1 bg-[#0f241c] border border-emerald-900 rounded-lg transition"
+          >
+            Refresh Reports
+          </button>
+        </div>
+
+        {isLoadingIssues ? (
+          <div className="p-8 text-center text-xs text-slate-400">
+            <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <span>Loading grievances...</span>
+          </div>
+        ) : issuesList.length === 0 ? (
+          <div className="p-8 text-center bg-[#091812] border border-emerald-900/40 rounded-xl">
+            <CheckCircle className="w-8 h-8 text-emerald-500/60 mx-auto mb-2" />
+            <p className="text-xs font-semibold text-slate-300">No grievance reports currently pending</p>
+            <p className="text-[11px] text-slate-500 mt-0.5">All student transport reports have been reviewed and resolved.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-300">
+              <thead className="bg-[#07130e] text-slate-400 uppercase text-[10px] tracking-wider border-b border-emerald-950">
+                <tr>
+                  <th className="py-2.5 px-3">Report ID</th>
+                  <th className="py-2.5 px-3">Title & Details</th>
+                  <th className="py-2.5 px-3">User</th>
+                  <th className="py-2.5 px-3">Date</th>
+                  <th className="py-2.5 px-3">Status</th>
+                  <th className="py-2.5 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-emerald-950/60">
+                {issuesList.map((issue) => (
+                  <tr key={issue.id} className="hover:bg-[#0e241c]/60 transition">
+                    <td className="py-2.5 px-3 font-mono text-[11px] text-emerald-400 font-bold whitespace-nowrap">
+                      {issue.id}
+                    </td>
+                    <td className="py-2.5 px-3 max-w-xs">
+                      <p className="font-bold text-white text-xs">{issue.title}</p>
+                      <p className="text-[11px] text-slate-400 line-clamp-1">{issue.description}</p>
+                    </td>
+                    <td className="py-2.5 px-3 text-[11px] text-slate-400 whitespace-nowrap">
+                      {issue.user_id}
+                    </td>
+                    <td className="py-2.5 px-3 text-[11px] text-slate-400 whitespace-nowrap">
+                      {issue.created_at ? new Date(issue.created_at).toLocaleDateString() : 'Recent'}
+                    </td>
+                    <td className="py-2.5 px-3 whitespace-nowrap">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                          issue.status === 'Resolved'
+                            ? 'bg-emerald-950 text-emerald-400 border-emerald-800'
+                            : issue.status === 'In Progress'
+                            ? 'bg-blue-950 text-blue-400 border-blue-800'
+                            : 'bg-amber-950 text-amber-400 border-amber-800'
+                        }`}
+                      >
+                        {issue.status}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-right whitespace-nowrap space-x-1">
+                      {issue.status !== 'In Progress' && issue.status !== 'Resolved' && (
+                        <button
+                          onClick={() => handleUpdateIssueStatus(issue.id, 'In Progress')}
+                          className="px-2 py-1 bg-blue-950 hover:bg-blue-900 border border-blue-800 text-blue-300 rounded text-[10px] font-semibold transition"
+                        >
+                          In Progress
+                        </button>
+                      )}
+                      {issue.status !== 'Resolved' && (
+                        <button
+                          onClick={() => handleUpdateIssueStatus(issue.id, 'Resolved')}
+                          className="px-2 py-1 bg-emerald-950 hover:bg-emerald-900 border border-emerald-800 text-emerald-300 rounded text-[10px] font-semibold transition"
+                        >
+                          Resolve
+                        </button>
+                      )}
+                      {issue.status === 'Resolved' && (
+                        <span className="text-[10px] text-slate-500 font-medium">Completed</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* Add Bus Modal */}
       {showAddBusModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm">
           <div className="bg-[#0b1b14] border border-emerald-800 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-5 shadow-2xl">
-            <h3 className="font-bold text-base text-white mb-3">Register New University Bus</h3>
+            <h3 className="font-bold text-base text-white mb-3">Register New University Point</h3>
             <form onSubmit={handleCreateBus} className="space-y-3 text-xs">
               <div>
-                <label className="text-slate-400 block mb-1">Bus Number (e.g. Bus 13)</label>
+                <label className="text-slate-400 block mb-1">Point Number (e.g. Point 13)</label>
                 <input
                   type="text"
                   required
@@ -464,7 +625,7 @@ export default function AdminDashboard() {
                   {isSubmittingBus ? (
                     <span>Saving to SQLite...</span>
                   ) : (
-                    <span>Confirm & Add Bus</span>
+                    <span>Confirm & Add Point</span>
                   )}
                 </button>
               </div>

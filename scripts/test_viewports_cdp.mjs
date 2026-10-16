@@ -241,7 +241,7 @@ async function run() {
     await client.evaluate(`
       (function() {
         const buttons = Array.from(document.querySelectorAll('button'));
-        const promptBtn = buttons.find(b => b.textContent.includes('When is Bus 03'));
+        const promptBtn = buttons.find(b => b.textContent.includes('Next point?'));
         if (promptBtn) promptBtn.click();
       })()
     `);

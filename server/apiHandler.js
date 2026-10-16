@@ -55,7 +55,7 @@ export async function handleApiRequest(req, res) {
 
       const cleanIdentifier = identifier.trim();
       const user = db.prepare(`
-        SELECT id, name, email, roll_no, role, department, password_hash
+        SELECT id, name, email, roll_no, role, department, password_hash, avatar
         FROM users
         WHERE LOWER(email) = LOWER(?) OR LOWER(roll_no) = LOWER(?)
       `).get(cleanIdentifier, cleanIdentifier);
@@ -73,6 +73,12 @@ export async function handleApiRequest(req, res) {
       }
 
       const { password_hash, ...safeUser } = user;
+      safeUser.rollNo = safeUser.roll_no;
+      if (!safeUser.avatar) {
+        if (safeUser.role === 'Driver') safeUser.avatar = '/images/avatars/driver.jpg';
+        else if (safeUser.role === 'Admin') safeUser.avatar = '/images/avatars/admin.jpg';
+        else safeUser.avatar = '/images/avatars/student-female.jpg';
+      }
       const token = generateToken(safeUser);
 
       db.prepare('INSERT INTO audit_logs (action, performed_by) VALUES (?, ?)').run(
@@ -112,13 +118,13 @@ export async function handleApiRequest(req, res) {
         ? email.trim().toLowerCase() 
         : `${cleanRollNo.toLowerCase()}@student.muet.edu.pk`;
 
-      // Strict MUET Roll Number Pattern: 2-digit year + 4-letter department + 3-digit number (e.g. 25BSCS016)
-      const rollPattern = /^[0-9]{2}[A-Z]{4}[0-9]{3}$/;
+      // Flexible MUET Roll Number Pattern: 2 or 4-digit batch + department code + 1 to 4 digits (e.g. 25CS16, 25BSCS016, 25ME01, 24SW45)
+      const rollPattern = /^(?:20)?[0-9]{2}[-\s]?[A-Z]{2,6}[-\s]?[0-9]{1,4}$/i;
       if (!rollPattern.test(cleanRollNo)) {
         res.statusCode = 400;
         res.end(JSON.stringify({
           success: false,
-          error: `Invalid Roll Number format "${cleanRollNo}". Must follow official MUET format: 2-digit year + 4-letter department + 3-digit number (e.g., 25BSCS016).`
+          error: `Invalid Roll Number format "${cleanRollNo}". Allowed formats include 2 or 3 digits (e.g., 25CS16, 25BSCS016, 25ME01, 24SW45).`
         }));
         return;
       }
@@ -151,7 +157,8 @@ export async function handleApiRequest(req, res) {
         id, 
         name: fullName.trim(), 
         email: cleanEmail, 
-        roll_no: cleanRollNo, 
+        roll_no: cleanRollNo,
+        rollNo: cleanRollNo,
         role: 'Student', 
         department: department?.trim() || 'Computer Systems Engineering' 
       };
@@ -177,7 +184,7 @@ export async function handleApiRequest(req, res) {
       }
 
       const user = db.prepare(`
-        SELECT id, name, email, roll_no, role, department 
+        SELECT id, name, email, roll_no, role, department, avatar 
         FROM users 
         WHERE id = ?
       `).get(decoded.id);
@@ -188,7 +195,14 @@ export async function handleApiRequest(req, res) {
         return;
       }
 
-      res.end(JSON.stringify({ success: true, user }));
+      const safeUser = { ...user, rollNo: user.roll_no };
+      if (!safeUser.avatar) {
+        if (safeUser.role === 'Driver') safeUser.avatar = '/images/avatars/driver.jpg';
+        else if (safeUser.role === 'Admin') safeUser.avatar = '/images/avatars/admin.jpg';
+        else safeUser.avatar = '/images/avatars/student-female.jpg';
+      }
+
+      res.end(JSON.stringify({ success: true, user: safeUser }));
       return;
     }
 
@@ -222,7 +236,7 @@ export async function handleApiRequest(req, res) {
     }
 
     // 6. BUSES: PUT /api/buses/:id (ADMIN or DRIVER)
-    if (pathname.startsWith('/api/buses/') && req.method === 'PUT') {
+    if (pathname.startsWith('/api/buses/') && !pathname.includes('/location') && req.method === 'PUT') {
       const user = authenticateRequest(req);
       if (!user || (user.role !== 'Admin' && user.role !== 'Driver')) {
         res.statusCode = 403;
@@ -241,6 +255,146 @@ export async function handleApiRequest(req, res) {
       }
 
       res.end(JSON.stringify({ success: true, data: updated }));
+      return;
+    }
+
+    // 6b. BUSES: POST /api/buses/:id/location — Driver GPS location update
+    if (pathname.match(/^\/api\/buses\/[^/]+\/location$/) && req.method === 'POST') {
+      const user = authenticateRequest(req);
+      if (!user || (user.role !== 'Driver' && user.role !== 'Admin')) {
+        res.statusCode = 403;
+        res.end(JSON.stringify({ success: false, error: 'Forbidden: Driver authorization required' }));
+        return;
+      }
+
+      const busId = pathname.split('/')[3];
+      const body = await readJsonBody();
+      const { lat, lng, accuracy } = body;
+
+      if (lat == null || lng == null) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ success: false, error: 'lat and lng are required' }));
+        return;
+      }
+
+      const bus = db.prepare('SELECT id, driver_id, driver_name FROM buses WHERE id = ?').get(busId);
+      if (!bus) {
+        res.statusCode = 404;
+        res.end(JSON.stringify({ success: false, error: 'Bus not found' }));
+        return;
+      }
+
+      // Drivers can only update their own bus; Admins can update any
+      if (user.role === 'Driver' && bus.driver_id && bus.driver_id !== user.id && bus.driver_name !== user.name) {
+        res.statusCode = 403;
+        res.end(JSON.stringify({ success: false, error: 'Forbidden: You can only update your own assigned bus' }));
+        return;
+      }
+
+      db.prepare(`
+        UPDATE buses SET
+          current_lat = ?,
+          current_lng = ?,
+          last_update = CURRENT_TIMESTAMP,
+          is_online = 1
+        WHERE id = ?
+      `).run(Number(lat), Number(lng), busId);
+
+      res.end(JSON.stringify({
+        success: true,
+        message: 'Location updated',
+        lat: Number(lat),
+        lng: Number(lng),
+        accuracy: accuracy || null
+      }));
+      return;
+    }
+
+    // 6c. TRIPS: POST /api/trips — Start a new trip
+    if (pathname === '/api/trips' && req.method === 'POST') {
+      const user = authenticateRequest(req);
+      if (!user || (user.role !== 'Driver' && user.role !== 'Admin')) {
+        res.statusCode = 403;
+        res.end(JSON.stringify({ success: false, error: 'Forbidden: Driver authorization required' }));
+        return;
+      }
+
+      const body = await readJsonBody();
+      const { bus_id, route_id } = body;
+      if (!bus_id) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ success: false, error: 'bus_id is required' }));
+        return;
+      }
+
+      // End any existing active trip for this driver first
+      db.prepare(`
+        UPDATE trips SET status = 'Completed', end_time = CURRENT_TIMESTAMP
+        WHERE driver_id = ? AND status = 'Active'
+      `).run(user.id);
+
+      const tripId = `trip-${Date.now()}`;
+      db.prepare(`
+        INSERT INTO trips (id, bus_id, driver_id, route_id, status)
+        VALUES (?, ?, ?, ?, 'Active')
+      `).run(tripId, bus_id, user.id, route_id || 'route-01');
+
+      db.prepare(`UPDATE buses SET status = 'On Route', is_online = 1, driver_id = ? WHERE id = ?`).run(user.id, bus_id);
+
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, data: { id: tripId, bus_id, driver_id: user.id, status: 'Active' } }));
+      return;
+    }
+
+    // 6d. TRIPS: GET /api/trips/active — Get active trip for current driver or any active
+    if (pathname === '/api/trips/active' && req.method === 'GET') {
+      const user = authenticateRequest(req);
+      let trip;
+      if (user && user.role === 'Driver') {
+        trip = db.prepare(`
+          SELECT t.*, b.current_lat, b.current_lng, b.number as bus_number
+          FROM trips t LEFT JOIN buses b ON t.bus_id = b.id
+          WHERE t.driver_id = ? AND t.status = 'Active'
+          ORDER BY t.start_time DESC LIMIT 1
+        `).get(user.id);
+      } else {
+        trip = db.prepare(`
+          SELECT t.*, b.current_lat, b.current_lng, b.number as bus_number
+          FROM trips t LEFT JOIN buses b ON t.bus_id = b.id
+          WHERE t.status = 'Active'
+          ORDER BY t.start_time DESC LIMIT 1
+        `).get();
+      }
+      res.end(JSON.stringify({ success: true, data: trip || null }));
+      return;
+    }
+
+    // 6e. TRIPS: PUT /api/trips/:id/end — End a trip
+    if (pathname.match(/^\/api\/trips\/[^/]+\/end$/) && req.method === 'PUT') {
+      const user = authenticateRequest(req);
+      if (!user || (user.role !== 'Driver' && user.role !== 'Admin')) {
+        res.statusCode = 403;
+        res.end(JSON.stringify({ success: false, error: 'Forbidden' }));
+        return;
+      }
+
+      const tripId = pathname.split('/')[3];
+      const trip = db.prepare('SELECT * FROM trips WHERE id = ?').get(tripId);
+      if (!trip) {
+        res.statusCode = 404;
+        res.end(JSON.stringify({ success: false, error: 'Trip not found' }));
+        return;
+      }
+      if (user.role === 'Driver' && trip.driver_id !== user.id) {
+        res.statusCode = 403;
+        res.end(JSON.stringify({ success: false, error: 'Forbidden: Not your trip' }));
+        return;
+      }
+
+      db.prepare(`UPDATE trips SET status = 'Completed', end_time = CURRENT_TIMESTAMP WHERE id = ?`).run(tripId);
+      db.prepare(`UPDATE buses SET status = 'Inactive', is_online = 0 WHERE id = ?`).run(trip.bus_id);
+
+      res.end(JSON.stringify({ success: true, message: 'Trip ended' }));
       return;
     }
 
@@ -311,9 +465,9 @@ export async function handleApiRequest(req, res) {
 
     if (pathname === '/api/notifications' && req.method === 'POST') {
       const user = authenticateRequest(req);
-      if (!user || user.role !== 'Admin') {
+      if (!user || (user.role !== 'Admin' && user.role !== 'Driver')) {
         res.statusCode = 403;
-        res.end(JSON.stringify({ success: false, error: 'Forbidden: Admin role required to broadcast alerts' }));
+        res.end(JSON.stringify({ success: false, error: 'Forbidden: Admin or Driver role required to broadcast alerts' }));
         return;
       }
 
@@ -325,7 +479,7 @@ export async function handleApiRequest(req, res) {
       `).run(notifId, body.title, body.message, body.category || 'alert', body.severity || 'warning');
 
       db.prepare('INSERT INTO audit_logs (action, performed_by) VALUES (?, ?)').run(
-        `Emergency alert broadcasted: "${body.title}"`,
+        `Emergency alert broadcasted by ${user.name} (${user.role}): "${body.title}"`,
         user.name
       );
 
@@ -333,6 +487,99 @@ export async function handleApiRequest(req, res) {
       res.end(JSON.stringify({ success: true, data: { id: notifId, ...body } }));
       return;
     }
+
+    // 10b. NOTIFICATIONS: PUT /api/notifications/read — Mark all or single notification as read
+    if (pathname === '/api/notifications/read' && req.method === 'PUT') {
+      const user = authenticateRequest(req);
+      if (!user) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ success: false, error: 'Authentication required' }));
+        return;
+      }
+      try {
+        const body = await readJsonBody().catch(() => ({}));
+        if (body && body.id) {
+          db.prepare('UPDATE notifications SET is_read = 1 WHERE id = ?').run(body.id);
+        } else {
+          db.prepare('UPDATE notifications SET is_read = 1').run();
+        }
+      } catch {
+        db.prepare('UPDATE notifications SET is_read = 1').run();
+      }
+      res.end(JSON.stringify({ success: true, message: 'Notifications marked as read' }));
+      return;
+    }
+    // 12. ISSUES: POST - create new issue (authenticated)
+    if (pathname === '/api/issues' && req.method === 'POST') {
+      const user = authenticateRequest(req);
+      if (!user) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ success: false, error: 'Authentication required' }));
+        return;
+      }
+      const body = await readJsonBody();
+      const { title, description } = body;
+      if (!title || !description) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ success: false, error: 'Title and description are required' }));
+        return;
+      }
+      const issueId = `issue-${Date.now()}`;
+      db.prepare(`
+        INSERT INTO issues (id, user_id, title, description, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, 'Open', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `).run(issueId, user.id, title, description);
+      db.prepare('INSERT INTO audit_logs (action, performed_by) VALUES (?, ?)').run(
+        `User ${user.name} submitted issue ${issueId}`,
+        user.name
+      );
+      res.statusCode = 201;
+      res.end(JSON.stringify({ success: true, data: { id: issueId, title, description, status: 'Open' } }));
+      return;
+    }
+    // 13. ISSUES: GET - retrieve issues (admin gets all, others get own)
+    if (pathname === '/api/issues' && req.method === 'GET') {
+      const user = authenticateRequest(req);
+      if (!user) {
+        res.statusCode = 401;
+        res.end(JSON.stringify({ success: false, error: 'Authentication required' }));
+        return;
+      }
+      let rows;
+      if (user.role === 'Admin') {
+        rows = db.prepare('SELECT * FROM issues ORDER BY created_at DESC').all();
+      } else {
+        rows = db.prepare('SELECT * FROM issues WHERE user_id = ? ORDER BY created_at DESC').all(user.id);
+      }
+      res.end(JSON.stringify({ success: true, data: rows }));
+      return;
+    }
+
+    // 14. ISSUES: PUT /api/issues/:id (Admin only) - update issue status
+    if (pathname.match(/^\/api\/issues\/[^/]+$/) && req.method === 'PUT') {
+      const user = authenticateRequest(req);
+      if (!user || user.role !== 'Admin') {
+        res.statusCode = 403;
+        res.end(JSON.stringify({ success: false, error: 'Forbidden: Admin role required to update issue status' }));
+        return;
+      }
+      const issueId = pathname.split('/')[3];
+      const body = await readJsonBody();
+      const { status } = body;
+      if (!status) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ success: false, error: 'Status is required' }));
+        return;
+      }
+      db.prepare('UPDATE issues SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, issueId);
+      db.prepare('INSERT INTO audit_logs (action, performed_by) VALUES (?, ?)').run(
+        `Admin ${user.name} updated issue ${issueId} to ${status}`,
+        user.name
+      );
+      res.end(JSON.stringify({ success: true, message: 'Issue updated successfully' }));
+      return;
+    }
+    // 11. SCHEMA: GET
 
     // 11. SCHEMA: GET
     if (pathname === '/api/schema' && req.method === 'GET') {

@@ -1,0 +1,10 @@
+import { DatabaseSync } from 'node:sqlite';
+import path from 'node:path';
+const db = new DatabaseSync(path.resolve('muet_tracker.sqlite'));
+const users = db.prepare('SELECT id, name, roll_no, role FROM users').all();
+console.log('All users:', JSON.stringify(users, null, 2));
+const result = db.prepare("UPDATE users SET roll_no = '25BSCS001' WHERE id = 'usr-01'").run();
+console.log('Updated rows:', result.changes);
+const user = db.prepare("SELECT id, name, roll_no FROM users WHERE id = 'usr-01'").get();
+console.log('Zainab after update:', user);
+db.close();

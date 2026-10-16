@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigation, Bus, Clock, Shield, Sparkles, Filter } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import LeafletBusMap from '../map/LeafletBusMap';
+import { formatPointNumber, getRouteColor } from '../../utils/routeColors';
 
 export default function LiveTrackingView() {
   const { buses, selectedBus, setSelectedBus, routes, setSelectedRoute } = useApp();
@@ -22,21 +23,30 @@ export default function LiveTrackingView() {
 
         {/* Fleet corridor pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1">
-          {buses.slice(0, 4).map((b) => (
-            <button
-              key={b.id}
-              onClick={() => setSelectedBus(b)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-                selectedBus?.id === b.id
-                  ? 'bg-emerald-500 text-slate-950 shadow-md'
-                  : 'bg-[#0f241c] text-slate-300 hover:bg-[#143226] border border-emerald-900/60'
-              }`}
-            >
-              <Bus className="w-3.5 h-3.5" />
-              <span>{b.number}</span>
-              <span className="text-[10px] opacity-80">({b.eta})</span>
-            </button>
-          ))}
+          {buses.slice(0, 4).map((b) => {
+            const color = getRouteColor(b.routeId);
+            const isSelected = selectedBus?.id === b.id;
+
+            return (
+              <button
+                key={b.id}
+                onClick={() => setSelectedBus(b)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
+                  isSelected
+                    ? 'bg-emerald-500 text-slate-950 shadow-md'
+                    : 'bg-[#0f241c] text-slate-300 hover:bg-[#143226] border'
+                }`}
+                style={!isSelected ? { borderColor: `${color.primary}40` } : {}}
+              >
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: color.primary }}
+                />
+                <span>{formatPointNumber(b.number)}</span>
+                <span className="text-[10px] opacity-80">({b.eta})</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

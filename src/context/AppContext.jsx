@@ -23,6 +23,9 @@ export function AppProvider({ children }) {
       if (savedUser && savedToken) {
         const parsed = JSON.parse(savedUser);
         if (parsed && parsed.isAuthenticated) {
+          if (!parsed.rollNo && parsed.roll_no) {
+            parsed.rollNo = parsed.roll_no;
+          }
           return parsed;
         }
       }
@@ -38,11 +41,8 @@ export function AppProvider({ children }) {
 
   // Theme Management: 'default' (MUET Emerald Dark) | 'light' (Clean White & Slate Blue)
   const [theme, setThemeState] = useState(() => {
-    try {
-      return localStorage.getItem('muet_tracker_theme') || 'default';
-    } catch {
-      return 'default';
-    }
+    // Force dark theme on every fresh load; ignore any persisted theme.
+    return 'default';
   });
 
   const applyThemeToDom = useCallback((themeName) => {
@@ -141,6 +141,44 @@ export function AppProvider({ children }) {
   const [simulationSpeed, setSimulationSpeed] = useState(1); // 1x, 2x, 5x
   const [lastUpdateTime, setLastUpdateTime] = useState(new Date());
 
+  // Favorites Feature: starred routes and stops persisted to localStorage
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      const saved = localStorage.getItem('muet_tracker_favorites');
+      return saved ? JSON.parse(saved) : { routes: ['route-02'], stops: ['s-02'] };
+    } catch {
+      return { routes: ['route-02'], stops: ['s-02'] };
+    }
+  });
+
+  const toggleFavoriteRoute = useCallback((routeId) => {
+    setFavorites((prev) => {
+      const exists = prev.routes?.includes(routeId);
+      const updated = {
+        ...prev,
+        routes: exists ? prev.routes.filter((id) => id !== routeId) : [...(prev.routes || []), routeId]
+      };
+      try {
+        localStorage.setItem('muet_tracker_favorites', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, []);
+
+  const toggleFavoriteStop = useCallback((stopId) => {
+    setFavorites((prev) => {
+      const exists = prev.stops?.includes(stopId);
+      const updated = {
+        ...prev,
+        stops: exists ? prev.stops.filter((id) => id !== stopId) : [...(prev.stops || []), stopId]
+      };
+      try {
+        localStorage.setItem('muet_tracker_favorites', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, []);
+
   // Save user & token changes to sessionStorage (preserved on refresh within same session)
   useEffect(() => {
     if (currentUser && currentUser.isAuthenticated) {
@@ -215,7 +253,7 @@ export function AppProvider({ children }) {
           id = 'DRV-7712';
           pwd = 'driver123';
         } else {
-          id = 'MUET-2023-CS-001';
+          id = '25BSCS016';
           pwd = 'password123';
         }
       }
@@ -336,12 +374,18 @@ export function AppProvider({ children }) {
         console.warn('Buses fetch notice:', bErr.message);
       }
 
-      // 3. Fetch notifications
+      // 3. Fetch notifications (normalize DB field is_read → isRead for consistent frontend usage)
       try {
-        const notifRes = await fetch('/api/notifications');
+        const savedToken = sessionStorage.getItem('muet_tracker_token');
+        const notifHeaders = savedToken ? { 'Authorization': `Bearer ${savedToken}` } : {};
+        const notifRes = await fetch('/api/notifications', { headers: notifHeaders });
         const notifData = await notifRes.json();
         if (notifData.success && Array.isArray(notifData.data) && notifData.data.length > 0) {
-          setNotifications(notifData.data);
+          const normalized = notifData.data.map(n => ({
+            ...n,
+            isRead: n.isRead !== undefined ? n.isRead : Boolean(n.is_read)
+          }));
+          setNotifications(normalized);
         }
       } catch (nErr) {
         console.warn('Notifications fetch notice:', nErr.message);
@@ -434,7 +478,7 @@ export function AppProvider({ children }) {
       } else {
         const role = roleOrCreds;
         payload = {
-          identifier: maybeCreds.identifier || (role === 'Admin' ? 'admin@muet.edu.pk' : role === 'Driver' ? 'DRV-7712' : 'MUET-2023-CS-001'),
+          identifier: maybeCreds.identifier || (role === 'Admin' ? 'admin@muet.edu.pk' : role === 'Driver' ? 'DRV-7712' : '25BSCS016'),
           password: maybeCreds.password || (role === 'Admin' ? 'admin123' : role === 'Driver' ? 'driver123' : 'password123')
         };
       }
@@ -450,6 +494,7 @@ export function AppProvider({ children }) {
         setAuthToken(data.token);
         const userObj = {
           ...data.user,
+          rollNo: data.user.rollNo || data.user.roll_no || '',
           initials: data.user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
           isAuthenticated: true
         };
@@ -716,14 +761,16 @@ export function AppProvider({ children }) {
       category: 'alert',
       type: alertData.type || 'delay',
       isRead: false,
+      is_read: 0,
       severity: alertData.severity || 'warning'
     };
     setNotifications((prev) => [newNotif, ...prev]);
-    addAdminActivity(`Admin broadcasted emergency alert: "${alertData.title}"`);
+    const authorRole = currentUser?.role || 'Admin';
+    addAdminActivity(`${authorRole} broadcasted emergency alert: "${alertData.title}"`);
 
     try {
       let token = authToken;
-      if (!token) token = await refreshAuthToken('Admin');
+      if (!token) token = await refreshAuthToken(authorRole === 'Driver' ? 'Driver' : 'Admin');
 
       await fetch('/api/notifications', {
         method: 'POST',
@@ -745,8 +792,22 @@ export function AppProvider({ children }) {
     ]);
   };
 
-  const markAllNotificationsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+  const markAllNotificationsRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, is_read: 1 })));
+    try {
+      const token = authToken || sessionStorage.getItem('muet_tracker_token');
+      if (token) {
+        await fetch('/api/notifications/read', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      }
+    } catch (err) {
+      console.warn('Error marking notifications read:', err);
+    }
   };
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
@@ -795,6 +856,9 @@ export function AppProvider({ children }) {
         setIsQRScannerOpen,
         isAuthModalOpen,
         setIsAuthModalOpen,
+        favorites,
+        toggleFavoriteRoute,
+        toggleFavoriteStop,
         adminActivities,
         loginUser,
         registerStudent,

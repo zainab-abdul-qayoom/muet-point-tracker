@@ -15,10 +15,12 @@ import {
   ExternalLink,
   QrCode,
   Menu,
-  X
+  X,
+  Bot
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import ThemeSwitcher from './ThemeSwitcher';
+import { formatPointNumber } from '../../utils/routeColors';
 
 export default function Header() {
   const {
@@ -118,16 +120,20 @@ export default function Header() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search for a bus, route or stop..."
-            className="w-full bg-[#0f241c] text-sm text-slate-200 placeholder:text-emerald-700/80 rounded-full pl-10 pr-4 py-2 border border-emerald-900/60 focus:outline-none focus:border-emerald-500/80 focus:ring-1 focus:ring-emerald-500/50 transition-all"
+            placeholder="Search for a point, route, stop or location..."
+            className="w-full bg-[#0f241c] text-sm text-slate-200 placeholder:text-emerald-700/80 rounded-full pl-10 pr-12 py-2 border border-emerald-900/60 focus:outline-none focus:border-emerald-500/80 focus:ring-1 focus:ring-emerald-500/50 transition-all"
           />
-          {searchQuery && (
+          {searchQuery ? (
             <button
               onClick={() => setSearchQuery('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
             >
               ✕
             </button>
+          ) : (
+            <span className="hidden sm:inline-block absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-emerald-950/60 border border-emerald-900/60 pointer-events-none">
+              ⌘ K
+            </span>
           )}
         </div>
 
@@ -136,7 +142,7 @@ export default function Header() {
           <div className="absolute top-11 left-0 right-0 bg-[#0c1f17] border border-emerald-800/80 rounded-xl shadow-2xl p-2 z-50 text-xs">
             {searchResults.buses?.length > 0 && (
               <div className="mb-2">
-                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider px-2">Buses</span>
+                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider px-2">Points</span>
                 {searchResults.buses.slice(0, 3).map((b) => (
                   <div
                     key={b.id}
@@ -146,7 +152,7 @@ export default function Header() {
                     }}
                     className="p-2 hover:bg-[#153427] rounded-lg cursor-pointer flex items-center justify-between text-slate-200"
                   >
-                    <span className="font-semibold text-emerald-300">{b.number} ({b.routeName})</span>
+                    <span className="font-semibold text-emerald-300">{formatPointNumber(b.number)} ({b.routeName})</span>
                     <span className="text-[11px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded border border-emerald-800">
                       ETA {b.eta}
                     </span>
@@ -203,34 +209,6 @@ export default function Header() {
           ))}
         </div>
 
-        {/* AI Assistant Pill (Visible on sm+ screens; floating MyMuetien assistant bubble serves mobile) */}
-        <button
-          onClick={() => setIsAiAssistantOpen(true)}
-          className="hidden sm:flex bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full items-center gap-1.5 shadow-md transition-all shrink-0"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">MUET Point AI</span>
-        </button>
-
-        {/* Stop QR Code Modal */}
-        <button
-          onClick={() => setIsQRScannerOpen(true)}
-          title="Scan Bus Stop QR Code"
-          className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#0f241c] hover:bg-[#153427] border border-emerald-900/60 text-emerald-400 hidden sm:flex items-center justify-center transition-all shrink-0"
-        >
-          <QrCode className="w-4 h-4" />
-        </button>
-
-        {/* Mobile View Simulator Button (Hidden on actual mobile viewports) */}
-        <button
-          onClick={() => setIsMobilePreviewOpen(true)}
-          title="Toggle Mobile Simulator (iPhone 15 Mockup)"
-          className="hidden sm:flex h-9 px-2.5 rounded-full bg-[#0f241c] hover:bg-[#153427] border border-emerald-800/80 text-emerald-300 items-center gap-1.5 text-xs font-medium transition-all shrink-0"
-        >
-          <Smartphone className="w-4 h-4 text-emerald-400" />
-          <span className="hidden lg:inline text-[11px]">Phone View</span>
-        </button>
-
         {/* Institutional Theme Switcher */}
         <ThemeSwitcher />
 
@@ -242,6 +220,7 @@ export default function Header() {
               if (!isNotifOpen) markAllNotificationsRead();
             }}
             className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#0f241c] hover:bg-[#153427] border border-emerald-900/60 flex items-center justify-center text-slate-200 transition-all shrink-0"
+            title="Notifications"
           >
             <Bell className="w-4 h-4 text-emerald-400" />
             {unreadCount > 0 && (
@@ -288,18 +267,42 @@ export default function Header() {
           )}
         </div>
 
-        {/* User Avatar Chip (Matching Mockup "ZA") */}
+        {/* Chatbot Pill Button matching reference image */}
+        <button
+          onClick={() => setIsAiAssistantOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0f241c] hover:bg-[#153427] border border-emerald-800/80 text-xs font-semibold text-white shadow-sm transition-all shrink-0"
+        >
+          <Bot className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="hidden sm:inline">Chatbot</span>
+        </button>
+
+        {/* User Profile Pill matching reference image */}
         <div className="relative">
           <button
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-            className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full bg-[#0f241c] hover:bg-[#153427] border border-emerald-800/80 transition-all"
+            className="flex items-center gap-2.5 pl-1 pr-2.5 py-1 rounded-full bg-[#0f241c] hover:bg-[#153427] border border-emerald-800/80 transition-all text-left"
           >
-            <div className="w-7 h-7 rounded-full bg-emerald-500 text-slate-950 font-bold text-xs flex items-center justify-center shadow">
-              {currentUser.initials || 'ZA'}
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-emerald-600 text-slate-950 font-black text-xs flex items-center justify-center shadow shrink-0 border border-emerald-400/30">
+              <img
+                src={currentUser?.avatar || (currentUser?.role === 'Driver' ? '/images/avatars/driver.jpg' : currentUser?.role === 'Admin' ? '/images/avatars/admin.jpg' : '/images/avatars/student-female.jpg')}
+                alt={currentUser?.name || 'User'}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  if (e.target.parentElement) {
+                    e.target.parentElement.innerText = currentUser?.initials || 'ZA';
+                  }
+                }}
+              />
             </div>
-            <span className="text-xs font-semibold text-slate-200 hidden md:inline">
-              {currentUser.name?.split(' ')[0] || 'Zainab'}
-            </span>
+            <div className="hidden md:block leading-tight pr-1">
+              <p className="text-xs font-bold text-white leading-none truncate max-w-[150px]">
+                {currentUser?.name || 'Zainab Abdul Qayoom'}
+              </p>
+              <p className="text-[10px] text-slate-400 leading-tight mt-0.5 truncate max-w-[150px]">
+                {currentUser?.role || 'Student'} • {currentUser?.rollNo || currentUser?.roll_no || '25BSCS016'}
+              </p>
+            </div>
           </button>
 
           {/* User Menu & Role Switcher */}

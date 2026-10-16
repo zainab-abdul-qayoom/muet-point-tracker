@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { SCHEDULE_DATA } from '../../data/mockData';
 import { useApp } from '../../context/AppContext';
+import { formatPointNumber, getRouteColor } from '../../utils/routeColors';
 
 export default function BusSchedule() {
   const [dayTab, setDayTab] = useState('today');
@@ -60,6 +61,7 @@ export default function BusSchedule() {
       <div className="space-y-3">
         {currentSchedule.map((item, idx) => {
           const matchingBus = buses.find((b) => b.number === item.bus);
+          const color = getRouteColor(matchingBus?.routeId || 'route-02');
 
           return (
             <div
@@ -67,12 +69,19 @@ export default function BusSchedule() {
               className="bg-[#0b1b14] hover:bg-[#0e241c] border border-emerald-950/80 hover:border-emerald-800/80 rounded-2xl p-4 transition-all shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
             >
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-950/70 border border-emerald-800/50 flex items-center justify-center text-emerald-400 shrink-0">
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border"
+                  style={{
+                    backgroundColor: `${color.primary}18`,
+                    borderColor: `${color.primary}40`,
+                    color: color.primary
+                  }}
+                >
                   <Bus className="w-6 h-6" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-base text-white">{item.bus}</h3>
+                    <h3 className="font-bold text-base text-white">{formatPointNumber(item.bus)}</h3>
                     <span className="text-[10px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
                       {item.status}
                     </span>

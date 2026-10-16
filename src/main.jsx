@@ -12,3 +12,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>,
 )
 
+// Safe PWA Service Worker Registration
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator && import.meta.env?.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.log('SW registration notice:', err);
+    });
+  });
+}
+
+
